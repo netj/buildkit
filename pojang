@@ -1,9 +1,8 @@
 #!/bin/sh -e
 # pojang -- build an executable by packing given files and dirs
-# 
+# Home: http://netj.org/pojang
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2008-03-13
-# Home: http://netj.org/pojang
 # 
 # Usage:
 #   pojang <entry-file> [<tar options>] <file>... > <executable>
@@ -13,7 +12,7 @@
 #   # And, you use it through its `bin/shell', for example:
 #   /path/to/tool/bin/shell command1 arg1 arg2 ...
 # 
-#   # But, it becomes a bit clumsy when you want to carry around it.
+#   # But, it becomes a bit clumsy when you want to carry it around.
 #   # This is where `pojang' plays its role.  Make the tool handy by:
 #   cd /path/to/tool
 #   pojang bin/shell bin/cmd-* lib/*.sh share/*.txt ... >~/tool
@@ -25,6 +24,12 @@
 #   mv mytool-in-a-file .Trash/
 #   scp tool somehost:bin/
 
+# show usage
+if [ $# -eq 0 ]; then
+    sed -ne '/^# Usage:/,/^$/ s/^# //p' <"$0"
+    exit 1
+fi
+
 # check entry
 entry=$1
 if ! [ -f "$entry" -a -x "$entry" ]; then
@@ -33,7 +38,7 @@ if ! [ -f "$entry" -a -x "$entry" ]; then
 fi
 
 # begin with the pojang driver
-drvlen=`sed -ne '/<<DRV$/,/^DRV/p' <"$0" | wc -l`
+drvlen=`sed -ne '/<<DRV$/,/^DRV/p' <"$0" | wc -l | tr -d " "`
 cat <<DRV
 #!/bin/sh -e
 # an executable packed with pojang -- http://netj.org/pojang
@@ -42,9 +47,8 @@ trap "rm -rf \$tmp" 0
 tail -n +$drvlen "\$0" | tar pzxf - -C \$tmp
 \$tmp/$entry "\$@"
 exit \$?
-# end of pojang driver, package content follows
 DRV
-echo
+echo "# end of pojang driver, package content follows"
 
 # and the tar archive follows
 tar zcf - "$@"
