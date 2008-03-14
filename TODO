@@ -1,0 +1,6 @@
+= Caveat =
+* when package is aliased, the entry in it has no way to know what name it was
+  invoked. :(  If we modify the entry's $0 with exec -a, the actual entry
+  cannot determine where itself is.  The only way is to set an envvar for the
+  entry, similar to SSH_ORIGINAL_COMMAND.
+
