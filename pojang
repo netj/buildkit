@@ -32,7 +32,7 @@ fi
 
 # check entry
 entry=$1
-if ! [ -f "$entry" -a -x "$entry" ]; then
+if [ ! -f "$entry" -a -x "$entry" ]; then
     echo "$entry is not an executable entry" >&2
     exit 2
 fi
@@ -44,11 +44,11 @@ cat <<DRV
 # an executable packed with pojang -- http://netj.org/pojang
 tmp=\`mktemp -d /tmp/pojang.XXXXXX\`
 trap "rm -rf \$tmp" 0
-tail -n +$drvlen "\$0" | tar pzxf - -C \$tmp
+tail +$drvlen "\$0" 2>/dev/null | gunzip | (cd \$tmp; tar xpf -)
 \$tmp/$entry "\$@"
 exit \$?
 DRV
 echo "# end of pojang driver, package content follows"
 
 # and the tar archive follows
-tar zcf - "$@"
+tar cf - "$@" | gzip
