@@ -44,7 +44,7 @@ cat <<DRV
 # an executable packed with pojang -- http://netj.org/pojang
 tmp=\`mktemp -d /tmp/pojang.XXXXXX\`
 trap "rm -rf \$tmp" 0
-tail +$drvlen "\$0" 2>/dev/null | gunzip | (cd \$tmp; tar xpf -)
+tail -n +$drvlen "\$0" | gunzip | (cd \$tmp; tar xpf -)
 \$tmp/$entry "\$@"
 exit \$?
 DRV
