@@ -38,11 +38,12 @@ if ! [ -f "$entry" -a -x "$entry" ]; then
 fi
 
 # begin with the pojang driver
+basename=`basename "$PWD" || echo pojang`
 drvlen=`sed -ne '/<<DRV$/,/^DRV/p' <"$0" | wc -l | tr -d " "`
 cat <<DRV
 #!/bin/sh -e
 # an executable packed with pojang -- http://netj.org/pojang
-tmp=\`mktemp -d /tmp/pojang.XXXXXX\`
+tmp=\`mktemp -d /tmp/$basename.XXXXXX\`
 trap "rm -rf \$tmp" 0
 tail -n +$drvlen "\$0" | gzip -d | (cd \$tmp; tar xpf -)
 \$tmp/$entry "\$@"
