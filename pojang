@@ -32,7 +32,7 @@ fi
 
 # check entry
 entry=$1
-if [ ! -f "$entry" -a -x "$entry" ]; then
+if ! [ -f "$entry" -a -x "$entry" ]; then
     echo "$entry is not an executable entry" >&2
     exit 2
 fi
