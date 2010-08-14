@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# all-modules -- List all modules
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2010-07-24
+set -eu
+
+find * -name .module.install | sed 's:/[^/]*$::'

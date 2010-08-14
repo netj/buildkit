@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# stage -- Install file on the stage
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2010-07-27
+exec cp --archive --no-preserve=timestamps "$@"

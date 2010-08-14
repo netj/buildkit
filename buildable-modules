@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# buildable-modules -- List modules that are buildable among given ones
+# Author: Jaeho Shin <netj@ropas.snu.ac.kr>
+# Created: 2010-07-25
+set -eu
+
+for Module; do
+    [ -x "$Module/.module.build" ] || continue
+    echo "$Module"
+done

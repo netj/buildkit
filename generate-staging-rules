@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# generate-staging-rules -- Generate make rules for staging each module
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2010-07-24
+set -eu
+
+echo '# Make rules for installing modules on stage'
+echo -n '# Generated: '; date +%FT%T%:z
+echo
+
+dstdirs=()
+
+for Module; do
+    echo "# $Module"
+    # TODO how about defining a $YOYAK_MODULEDIR for module-local dir?
+    while read line; do
+        # discard comments and empty lines
+        line=${line%%#*}
+        line=${line//[	 ]/ }
+        read src dst rest <<<"$line" || continue
+        [ -n "$src" -a -n "$dst" ] || continue
+        # expand destination pathname
+        case "$dst" in
+            */) dst+=${src##*/} ;;
+        esac
+        dst=`eval echo "$dst"`
+        # generate staging rule
+        echo "stage: \$(STAGEDIR)/$dst"
+        dstdir="\$(STAGEDIR)/${dst%/*}/"
+        echo "\$(STAGEDIR)/$dst: $Module/$src $dstdir"
+        echo "	stage \$< \$@"
+        # remember destination directory for later
+        dstdirs+=("$dstdir")
+    done <"$Module"/.module.install 
+    echo
+done
+
+# generate directory creation rules
+echo "# Directories"
+printf '%s\n' "${dstdirs[@]}" | awk '!a[$0]++ {print}' |
+while read dstdir; do
+    echo "$dstdir:"
+    echo "	mkdir -p \$@"
+done

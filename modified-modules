@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# modified-modules -- List modules with changes among given ones
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2010-07-25
+set -eu
+
+TimestampFmt=$1; shift
+
+for Module; do
+    # compare timestamp with most recently modified file of the module
+    timestamp=`printf "$TimestampFmt" "$Module"`
+    mf=`most-recently-modified-files "$Module" | head -n 1`
+    [ "$mf" -nt "$timestamp" ] || continue
+    echo "$Module"
+done
