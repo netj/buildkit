@@ -12,7 +12,9 @@ dstdirs=()
 
 for Module; do
     echo "# $Module"
-    # TODO how about defining a $YOYAK_MODULEDIR for module-local dir?
+    # define module variables for use in destination pathnames
+    MODULE_PATH=$Module
+    MODULE_NAME=${Module##*/}
     while read line; do
         # discard comments and empty lines
         line=${line%%#*}
