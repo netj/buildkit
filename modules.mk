@@ -5,18 +5,19 @@
 BUILDKIT?=$(PWD)/buildkit
 SHELL:=$(shell which bash)
 PATH:=$(BUILDKIT):$(PATH)
-export SHELL PATH
+export BUILDKIT SHELL PATH
 
+STAGEDIR ?= .stage
+BUILDDIR ?= .build
+BUILD_TIMESTAMP_FMT:="$(BUILDDIR)/%s/build.timestamp"
+export STAGEDIR BUILDDIR
 
 PREFIX ?= /usr/local
 PACKAGENAME ?= $(shell basename $(PWD))
 PACKAGEVERSION ?= $(shell git rev-parse HEAD | cut -b -6 || \
 		  date +%Y%m%d)$(shell git status >/dev/null && echo +WIP)
-STAGEDIR ?= .stage
-BUILDDIR ?= .build
-BUILD_TIMESTAMP_FMT:="$(BUILDDIR)/%s/build.timestamp"
-
 MODULES=$(shell $(BUILDKIT)/all-modules)
+export PREFIX PACKAGENAME PACKAGEVERSION MODULES
 
 
 .PHONY: all build stage clean package install
@@ -39,15 +40,31 @@ $(BUILDDIR)/stage.mk: $(BUILDKIT)/generate-staging-rules $(MODULES:%=%/.module.i
 	$< >$@ $(MODULES)
 
 
+ifdef PACKAGEEXECUTES
+# use pojang for creating an executable package
+PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).sh
+package: $(PACKAGE)
+$(PACKAGE): stage
+	( cd $(STAGEDIR) && pojang $(PACKAGEEXECUTES) . ) >$@
+	chmod +x $@
+
+# we want to do create the package everytime
+all: package
+
+install: $(PACKAGE)
+	mkdir -p $(PREFIX)/bin
+	install $@ $(PREFIX)/bin/$(PACKAGENAME)
+else
+# otherwise, just create an ordinary tarball
 PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).tar.gz
 package: $(PACKAGE)
 $(PACKAGE): stage
-	tar czvf $@ -C .stage .
-
+	tar czvf $@ -C $(STAGEDIR) .
 
 install: $(PACKAGE)
 	mkdir -p $(PREFIX)
 	tar xzvf $< -C $(PREFIX)
+endif
 
 
 clean:
