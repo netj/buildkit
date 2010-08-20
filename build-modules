@@ -6,17 +6,11 @@ set -eu
 
 TimestampFmt=$1; shift
 
-set +e
 for Module; do
     timestamp=`printf "$TimestampFmt" "$Module"`
-    if  (
-        set -e
-        echo "cd $Module && ./.module.build"
-        cd "$Module"
-        "./.module.build" # TODO pass argument? e.g. build or clean
-        )
-    then
-        mkdir -p "`dirname "$timestamp"`"
-        touch "$timestamp"
-    fi
+    echo "cd $Module && ./.module.build"
+    cd "$Module"
+    ./.module.build # TODO pass argument? e.g. build or clean
+    mkdir -p "`dirname "$timestamp"`"
+    touch "$timestamp"
 done
