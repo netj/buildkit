@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# order-by-depends -- Order modules by dependencies
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2010-08-30
+set -eu
+
+tmp=`mktemp -d /tmp/buildkit.XXXXXX`
+trap "rm -rf $tmp" EXIT
+
+# gather dependency requirements from .module.depends and tsort them
+tee $tmp/all |
+while read -r m; do
+    deps=$m/.module.depends
+    [ -r $deps ] || continue
+    sed 's#$# '"$m"'#' <$deps
+done | #tee $tmp/with-deps |
+tsort | tee $tmp/ordered-deps
+# output modules ordered by dependency requirements first
+# and then other freely orderable ones next
+sort <$tmp/ordered-deps >$tmp/sorted-deps
+sort <$tmp/all | comm -23 - $tmp/sorted-deps

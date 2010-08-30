@@ -18,6 +18,10 @@ For each module, create following files:
      
          myscript.sh     $BINDIR/myscript
          mydata.txt      $DATADIR/
+     
+ * .module.depends
+     A list of names of other modules that this module depends on.
+     They will be built before this module is built.
 
 
 Next, you need to include this file from your root Makefile:
