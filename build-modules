@@ -12,7 +12,7 @@ for Module; do
     (
     cd "$Module"
     ./.module.build # TODO pass argument? e.g. build or clean
+    )
     mkdir -p "`dirname "$timestamp"`"
     touch "$timestamp"
-    )
 done
