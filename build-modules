@@ -9,10 +9,12 @@ TimestampFmt=$1; shift
 for Module; do
     timestamp=`printf "$TimestampFmt" "$Module"`
     echo "cd $Module && ./.module.build"
-    (
-    cd "$Module"
-    ./.module.build # TODO pass argument? e.g. build or clean
-    )
+    if ! (
+        cd "$Module"
+        ./.module.build # TODO pass argument? e.g. build or clean
+        ); then
+        exit 1
+    fi
     mkdir -p "`dirname "$timestamp"`"
     touch "$timestamp"
 done
