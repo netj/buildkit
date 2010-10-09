@@ -21,16 +21,28 @@ for Module; do
         line=${line//[	 ]/ }
         read src dst rest <<<"$line" || continue
         [ -n "$src" -a -n "$dst" ] || continue
+        srcname=${src%/}
         # expand destination pathname
-        case "$dst" in
-            */) dst+=${src##*/} ;;
+        case $dst in
+            */)
+            dst+=${srcname##*/}
+            ;;
         esac
         dst=`eval echo "$dst"`
+        dstdir="\$(STAGEDIR)/${dst%/*}/"
         # generate staging rule
         echo "stage: \$(STAGEDIR)/$dst"
-        dstdir="\$(STAGEDIR)/${dst%/*}/"
-        echo "\$(STAGEDIR)/$dst: $Module/$src $dstdir"
-        echo "	stage \$< \$@"
+        echo "\$(STAGEDIR)/$dst: $Module/$srcname $dstdir"
+        case $src in
+            */) # a directory
+            # TODO is it better if we make rules for individual files?
+            echo "	mkdir -p \$@"
+            echo "	stage \$</* \$@/"
+            ;;
+            *) # a file
+            echo "	stage \$< \$@"
+            ;;
+        esac
         # remember destination directory for later
         dstdirs+=("$dstdir")
     done <"$Module"/.module.install 
