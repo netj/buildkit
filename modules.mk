@@ -53,7 +53,7 @@ all: package
 
 install: $(PACKAGE)
 	mkdir -p $(PREFIX)/bin
-	install $@ $(PREFIX)/bin/$(PACKAGENAME)
+	install $< $(PREFIX)/bin/$(PACKAGENAME)
 else
 # otherwise, just create an ordinary tarball
 PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).tar.gz
