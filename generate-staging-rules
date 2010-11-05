@@ -50,9 +50,11 @@ for Module; do
 done
 
 # generate directory creation rules
-echo "# Directories"
-printf '%s\n' "${dstdirs[@]}" | awk '!a[$0]++ {print}' |
-while read dstdir; do
-    echo "$dstdir:"
-    echo "	mkdir -p \$@"
-done
+if [ ${#dstdirs[@]} -gt 0 ]; then
+    echo "# Directories"
+    printf '%s\n' "${dstdirs[@]}" | awk '!a[$0]++ {print}' |
+    while read dstdir; do
+        echo "$dstdir:"
+        echo "	mkdir -p \$@"
+    done
+fi
