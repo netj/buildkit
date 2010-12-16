@@ -16,7 +16,7 @@ PREFIX ?= /usr/local
 PACKAGENAME ?= $(shell basename $(PWD))
 PACKAGEVERSION ?= $(shell git rev-parse HEAD 2>/dev/null | cut -b -6 || \
 		  date +%Y%m%d)$(shell git status >/dev/null && echo +WIP)
-MODULES=$(shell $(BUILDKIT)/all-modules | $(BUILDKIT)/order-by-depends)
+MODULES:=$(shell $(BUILDKIT)/all-modules | $(BUILDKIT)/order-by-depends)
 export PREFIX PACKAGENAME PACKAGEVERSION MODULES
 
 

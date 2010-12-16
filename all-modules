@@ -4,4 +4,4 @@
 # Created: 2010-07-24
 set -eu
 
-find * -name .module.install | sed 's:/[^/]*$::'
+find * -name .module.install 2>/dev/null | sed 's:/[^/]*$::'
