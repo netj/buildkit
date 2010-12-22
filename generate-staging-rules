@@ -22,6 +22,8 @@ for Module; do
         read src dst rest <<<"$line" || continue
         [ -n "$src" -a -n "$dst" ] || continue
         srcname=${src%/}
+        # make explicit whether source is a directory or not in its name
+        if [ -d "$Module/$src" ]; then src=${src%/}/; fi
         # expand destination pathname
         case $dst in
             */)
@@ -38,6 +40,8 @@ for Module; do
             # TODO is it better if we make rules for individual files?
             echo "	mkdir -p \$@"
             echo "	stage \$</* \$@/"
+            echo "# XXX make doesn't know if files are changed inside a directory"
+            echo ".PHONY: \$(STAGEDIR)/$dst"
             ;;
             *) # a file
             echo "	stage \$< \$@"
