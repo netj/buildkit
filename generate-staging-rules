@@ -39,12 +39,12 @@ for Module; do
             */) # a directory
             # TODO is it better if we make rules for individual files?
             echo "	mkdir -p \$@"
-            echo "	stage \$</* \$@/"
+            echo "	cp -rf \$</* \$@/"
             echo "# XXX make doesn't know if files are changed inside a directory"
             echo ".PHONY: \$(STAGEDIR)/$dst"
             ;;
             *) # a file
-            echo "	stage \$< \$@"
+            echo "	cp -f \$< \$@"
             ;;
         esac
         # remember destination directory for later
