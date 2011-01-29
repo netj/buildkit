@@ -2,7 +2,7 @@
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2010-07-25
 
-BUILDKIT?=$(PWD)/buildkit
+BUILDKIT?=$(shell pwd)/buildkit
 SHELL:=$(shell which bash)
 PATH:=$(BUILDKIT):$(PATH)
 export BUILDKIT SHELL PATH
@@ -34,10 +34,14 @@ build:
 
 
 stage: build
+ifndef BUILD_FOR_STAGING_RULES
 include $(BUILDDIR)/stage.mk
 $(BUILDDIR)/stage.mk: $(BUILDKIT)/generate-staging-rules $(MODULES:%=%/.module.install)
 	mkdir -p $(@D)
+	# we need to first build before we determine staging rules
+	$(MAKE) BUILD_FOR_STAGING_RULES=1 build
 	$< >$@ $(MODULES)
+endif
 
 
 ifdef PACKAGEEXECUTES
