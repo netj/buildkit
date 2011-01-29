@@ -18,10 +18,10 @@ For each module, create following files:
      second column is the destination path, where it should be
      installed under the STAGEDIR.  You can use environment variables
      with sh-style syntax on the second column, e.g.
-     
-         myscript.sh     $BINDIR/myscript
-         mydata.txt      $DATADIR/
-     
+
+       myscript.sh     $BINDIR/myscript
+       mydata.txt      $DATADIR/
+
  * .module.depends
      A list of names of other modules that this module depends on.
      They will be built before this module is built.
@@ -49,6 +49,7 @@ under your source tree, without messing with any Makefiles:
 
 
 Enjoy,
+
 ~Jaeho
 
 
@@ -61,7 +62,7 @@ A Little More Detail on Using BuildKit
 If you are using Git for your project, you can link BuildKit as a submodule to
 yours by running the following command:
 
-    git submodule add http://github.com/netj/buildkit.git
+    git submodule add https://github.com/netj/buildkit.git
 
 
 ### BuildKit without Git
@@ -77,7 +78,7 @@ to have the latest version of BuildKit automatically, add following lines to
 your Makefile:
 
     buildkit/modules.mk:
-    	git clone http://github.com/netj/buildkit.git
+    	git clone https://github.com/netj/buildkit.git
 
 This will let Make retrieve BuildKit for you as it discovers the include lines.
 You'll probably need to add `buildkit` to the excluded files list of your
