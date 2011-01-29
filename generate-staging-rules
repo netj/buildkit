@@ -10,6 +10,7 @@ echo
 
 dstdirs=()
 
+: >"$BUILDDIR"/stage.contents
 for Module; do
     echo "# $Module"
     # define module variables for use in destination pathnames
@@ -22,8 +23,6 @@ for Module; do
         read src dst rest <<<"$line" || continue
         [ -n "$src" -a -n "$dst" ] || continue
         srcname=${src%/}
-        # make explicit whether source is a directory or not in its name
-        if [ -d "$Module/$src" ]; then src=${src%/}/; fi
         # expand destination pathname
         case $dst in
             */)
@@ -32,6 +31,12 @@ for Module; do
         esac
         dst=`eval echo "$dst"`
         dstdir="\$(STAGEDIR)/${dst%/*}/"
+        dstpath=$dst
+        # make explicit whether source is a directory or not in its name
+        if [ -d "$Module/$src" ]; then
+            src=${src%/}/
+            dstpath+=/
+        fi
         # generate staging rule
         echo "stage: \$(STAGEDIR)/$dst"
         echo "\$(STAGEDIR)/$dst: $Module/$srcname $dstdir"
@@ -47,6 +52,8 @@ for Module; do
             echo "	cp -f \$< \$@"
             ;;
         esac
+        # record in stage contents
+        echo "./$dstpath" >>"$BUILDDIR"/stage.contents
         # remember destination directory for later
         dstdirs+=("$dstdir")
     done <"$Module"/.module.install 
@@ -62,3 +69,29 @@ if [ ${#dstdirs[@]} -gt 0 ]; then
         echo "	mkdir -p \$@"
     done
 fi
+
+# generate stage contents list
+(
+cd "$BUILDDIR"
+# augment the list with closure of parent directories
+xargs -L1 dirname <stage.contents | sort -u >parents
+dirnames() {
+    {
+        cat parents
+        xargs -L1 dirname <parents
+    } | sort -u >parents0
+    if ! diff -q parents parents0 >/dev/null; then
+        mv -f parents0 parents
+        dirnames
+    else
+        rm -f parents0
+    fi
+}
+dirnames
+sort parents stage.contents >stage.contents.sorted
+mv -f stage.contents.sorted stage.contents
+rm -f parents
+sed -n '\:/$: s:/$:\\(/.*\\)\\?$:p' <stage.contents >stage.contents.dirs
+)
+echo "stage:"
+echo "	remove-stale-files"

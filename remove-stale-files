@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# remove-stale-files -- Remove stale files from stage
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2011-01-30
+set -eu
+
+# find files in stage
+(
+cd "$STAGEDIR"
+find . | sort
+) >"$BUILDDIR"/stage.found
+
+# find files not specified in contents except dirs from them
+(
+cd "$BUILDDIR"
+comm -13 stage.contents stage.found |
+grep -vf stage.contents.dirs || true
+) >"$BUILDDIR"/stage.stale
+
+# remove stale files from stage
+(
+cd "$STAGEDIR"
+xargs rm -rf
+) <"$BUILDDIR"/stage.stale
