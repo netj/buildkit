@@ -49,8 +49,7 @@ ifdef PACKAGEEXECUTES
 PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).sh
 package: $(PACKAGE)
 $(PACKAGE): stage
-	( cd $(STAGEDIR) && pojang $(PACKAGEEXECUTES) . ) >$@
-	chmod +x $@
+	pojang $@ $(STAGEDIR) $(PACKAGEEXECUTES) .
 
 # we want to do create the package everytime
 all: package

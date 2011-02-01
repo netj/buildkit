@@ -5,7 +5,14 @@
 # Created: 2008-03-13
 # 
 # Usage:
-#   pojang <entry-file> [<tar options>] <file>... > <executable>
+#   pojang EXECUTABLE BASEDIR ENTRY [-TAROPTION] PATH...
+# 
+#   EXECUTABLE is the path to the executable to be created.
+#   BASEDIR is where the following relative PATHs are based on.
+#   ENTRY is the path to the command that will receive all the arguments of the
+#     pojang'ed executable.
+#   PATH is the path to files and directories that will be included in the
+#     executable.
 # 
 # Example:
 #   # Suppose you have a nice `tool' consisting of multiple files.
@@ -14,9 +21,7 @@
 # 
 #   # But, it becomes a bit clumsy when you want to carry it around.
 #   # This is where `pojang' plays its role.  Make the tool handy by:
-#   cd /path/to/tool
-#   pojang bin/shell bin/cmd-* lib/*.sh share/*.txt ... >~/tool
-#   chmod +x ~/tool
+#   pojang ~/tool /path/to/tool bin/shell bin/cmd-* lib/*.sh share/*.txt ...
 # 
 #   # Now, move/copy/share your favorite tool as you do with your files.
 #   cp tool mytool-in-a-file
@@ -25,31 +30,58 @@
 #   scp tool somehost:bin/
 
 # show usage
-if [ $# -eq 0 ]; then
+if [ $# -lt 4 ]; then
     sed -ne '/^# Usage:/,/^$/ s/^# //p' <"$0"
     exit 1
 fi
 
+Product=$1; shift
+BaseDir=$1; shift
+
 # check entry
-entry=$1
-if ! [ -f "$entry" -a -x "$entry" ]; then
-    echo "$entry is not an executable entry" >&2
+Entry=$1
+if ! [ -f "$BaseDir/$Entry" -a -x "$BaseDir/$Entry" ]; then
+    echo "$BaseDir/$Entry is not an executable entry" >&2
     exit 2
 fi
 
+# how to calculate its signature
+packageId() {
+    if type sha1sum >/dev/null 2>&1; then
+        (
+            cd "$BaseDir"
+            find "$@" ! -type d | xargs sha1sum
+            ls -lR "$@"
+        ) | sha1sum | sed 's/ .*$//'
+    else
+        date +%s.%N
+    fi
+}
+
 # begin with the pojang driver
-basename=`basename "$PWD" || echo pojang`
+: ${PACKAGENAME:=`basename "$PWD"`}
+: ${PACKAGEID:=`packageId "$@"`}
 drvlen=`sed -ne '/<<DRV$/,/^DRV/p' <"$0" | wc -l | tr -d " "`
+{
 cat <<DRV
 #!/bin/sh -e
 # an executable packed with pojang -- http://netj.org/2008/03/pojang
-tmp=\`mktemp -d /tmp/$basename.XXXXXX\`
-trap "rm -rf \$tmp" 0
-tail -n +$drvlen "\$0" | gzip -d | (cd \$tmp; tar xpf -)
-\$tmp/$entry "\$@"
-exit \$?
+bundle=/tmp/pojang-\$USER/$PACKAGENAME/$PACKAGEID
+if ! [ -e \$bundle.ok ]; then
+    mkdir -p \$bundle
+    tail -n +$drvlen "\$0" | gzip -d | (cd \$bundle; tar xpf -)
+    touch \$bundle.ok
+fi
+exec \$bundle/$Entry "\$@"
 DRV
 echo "# end of pojang driver, package content follows"
 
 # and the tar archive follows
-tar cf - "$@" | gzip
+(
+cd "$BaseDir"
+tar cf - "$@"
+) | gzip
+} >"$Product"
+chmod +x "$Product"
+
+# TODO save $0 as POJANG_ORIGINAL_COMMAND
