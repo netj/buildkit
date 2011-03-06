@@ -12,6 +12,7 @@
 #   ENTRY is the path to the command that will receive all the arguments of the
 #     pojang'ed executable.
 #   PATH is the path to files and directories that will be included in the
+#     executable.  ENTRY must be included among them, or you will get a broken
 #     executable.
 # 
 # Example:
@@ -39,7 +40,7 @@ Product=$1; shift
 BaseDir=$1; shift
 
 # check entry
-Entry=$1
+Entry=$1; shift
 if ! [ -f "$BaseDir/$Entry" -a -x "$BaseDir/$Entry" ]; then
     echo "$BaseDir/$Entry is not an executable entry" >&2
     exit 2
@@ -79,7 +80,7 @@ echo "# end of pojang driver, package content follows"
 # and the tar archive follows
 (
 cd "$BaseDir"
-tar cf - "$@"
+tar cf - --format=posix "$@"
 ) | gzip
 } >"$Product"
 chmod +x "$Product"
