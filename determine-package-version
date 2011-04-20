@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# determine-package-version -- generate a version string for this source tree
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2011-04-19
+
+# try Git or use date
+version=`git rev-parse HEAD 2>/dev/null | cut -b -6 || date +0.0.%Y%m%d`
+
+# work-in-progress? (is the working tree dirty?)
+[ x"`git status --porcelain | wc -l`" = x0 ] || version+="+WIP"
+
+echo "$version"
