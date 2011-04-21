@@ -30,7 +30,10 @@ for Module; do
             ;;
         esac
         dst=`eval echo "$dst"`
+        # TODO normalize path systematically
         dstdir="\$(STAGEDIR)/${dst%/*}/"
+        dst=${dst#./}
+        dstdir=${dstdir%./}
         dstpath=$dst
         # make explicit whether source is a directory or not in its name
         if [ -d "$Module/$src" ]; then

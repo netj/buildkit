@@ -51,7 +51,7 @@ packageId() {
     if type sha1sum >/dev/null 2>&1; then
         (
             cd "$BaseDir"
-            find "$@" ! -type d | xargs sha1sum
+            find "$@" -type f | xargs sha1sum
             ls -lR "$@"
         ) | sha1sum | sed 's/ .*$//'
     else
