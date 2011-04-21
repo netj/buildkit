@@ -7,6 +7,7 @@ set -eu
 # Directories having .module.install are considered as BuildKit modules.
 # However, we should take care not to take over modules of nested source trees
 # using BuildKit.
-find * -name .module.install -printf '%h\n' \
+find * -name .module.install -print \
     -o -type d \( -name .git -o -execdir [ -d {}/buildkit ] \; \) -prune -false \
-    2>/dev/null
+    2>/dev/null |
+sed 's:/\.module\.install$::'
