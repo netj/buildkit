@@ -5,18 +5,17 @@
 BUILDKIT?=$(shell pwd)/buildkit
 SHELL:=$(shell which bash)
 PATH:=$(BUILDKIT):$(PATH)
-export BUILDKIT SHELL PATH
+export SHELL PATH
 
-STAGEDIR ?= .stage
-BUILDDIR ?= .build
+STAGEDIR?=.stage
+BUILDDIR?=.build
 BUILD_TIMESTAMP_FMT:="$(BUILDDIR)/%s/build.timestamp"
-export STAGEDIR BUILDDIR
 
-PREFIX ?= /usr/local
-PACKAGENAME ?= $(shell basename $(PWD))
-PACKAGEVERSION ?= $(shell $(BUILDKIT)/determine-package-version)
+PREFIX?=/usr/local
+PACKAGENAME?=$(shell basename $(PWD))
+PACKAGEVERSION?=$(shell $(BUILDKIT)/determine-package-version)
 MODULES:=$(shell $(BUILDKIT)/all-modules | $(BUILDKIT)/order-by-depends)
-export PREFIX PACKAGENAME PACKAGEVERSION MODULES
+export PREFIX
 
 
 .PHONY: all build stage clean package install
@@ -33,13 +32,14 @@ build:
 
 
 stage: build
-ifndef BUILD_FOR_STAGING_RULES
+ifndef BUILD_BEFORE_STAGING
 include $(BUILDDIR)/stage.mk
-$(BUILDDIR)/stage.mk: $(BUILDKIT)/generate-staging-rules $(MODULES:%=%/.module.install)
+$(BUILDDIR)/stage.mk: $(BUILDKIT)/generate-staging-rules $(BUILDKIT)/modules.mk $(MODULES:%=%/.module.install)
 	mkdir -p $(@D)
 	# we need to first build before we determine staging rules
-	$(MAKE) BUILD_FOR_STAGING_RULES=1 build
-	$< >$@ $(MODULES)
+	$(MAKE) BUILD_BEFORE_STAGING=required build
+	STAGEDIR=$(STAGEDIR) BUILDDIR=$(BUILDDIR) \
+generate-staging-rules >$@ $(MODULES)
 endif
 
 
@@ -48,6 +48,7 @@ ifdef PACKAGEEXECUTES
 PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).sh
 package: $(PACKAGE)
 $(PACKAGE): stage
+	PACKAGENAME=$(PACKAGENAME) \
 	pojang $@ $(STAGEDIR) $(PACKAGEEXECUTES) .
 
 # we want to do create the package everytime

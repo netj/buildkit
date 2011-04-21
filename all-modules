@@ -4,4 +4,9 @@
 # Created: 2010-07-24
 set -eu
 
-find * -name .module.install 2>/dev/null | sed 's:/[^/]*$::'
+# Directories having .module.install are considered as BuildKit modules.
+# However, we should take care not to take over modules of nested source trees
+# using BuildKit.
+find * -name .module.install -printf '%h\n' \
+    -o -type d \( -name .git -o -execdir [ -d {}/buildkit ] \; \) -prune -false \
+    2>/dev/null

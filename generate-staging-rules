@@ -97,4 +97,5 @@ rm -f parents
 sed -n '\:/$: s:/$:\\(/.*\\)\\?$:p' <stage.contents >stage.contents.dirs
 )
 echo "stage:"
-echo "	remove-stale-files"
+echo '	STAGEDIR=$(STAGEDIR) BUILDDIR=$(BUILDDIR) \'
+echo "remove-stale-files"
