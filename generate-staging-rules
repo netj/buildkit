@@ -20,45 +20,50 @@ for Module; do
         # discard comments and empty lines
         line=${line%%#*}
         line=${line//[	 ]/ }
-        read src dst rest <<<"$line" || continue
-        [ -n "$src" -a -n "$dst" ] || continue
-        srcname=${src%/}
-        # expand destination pathname
-        case $dst in
-            */)
-            dst+=${srcname##*/}
-            ;;
-        esac
-        dst=`eval echo "$dst"`
-        # TODO normalize path systematically
-        dstdir="\$(STAGEDIR)/${dst%/*}/"
-        dst=${dst#./}
-        dstdir=${dstdir%./}
-        dstpath=$dst
-        # make explicit whether source is a directory or not in its name
-        if [ -d "$Module/$src" ]; then
-            src=${src%/}/
-            dstpath+=/
-        fi
-        # generate staging rule
-        echo "stage: \$(STAGEDIR)/$dst"
-        echo "\$(STAGEDIR)/$dst: $Module/$srcname $dstdir"
-        case $src in
-            */) # a directory
-            # TODO is it better if we make rules for individual files?
-            echo "	mkdir -p \$@"
-            echo "	cp -rf \$</* \$@/"
-            echo "# XXX make doesn't know if files are changed inside a directory"
-            echo ".PHONY: \$(STAGEDIR)/$dst"
-            ;;
-            *) # a file
-            echo "	cp -f \$< \$@"
-            ;;
-        esac
-        # record in stage contents
-        echo "./$dstpath" >>"$BUILDDIR"/stage.contents
-        # remember destination directory for later
-        dstdirs+=("$dstdir")
+        read srcpatt dstpatt rest <<<"$line" || continue
+        [ -n "$srcpatt" -a -n "$dstpatt" ] || continue
+        # expand source pathname
+        for src in "$Module"/$srcpatt; do
+            src=${src#"$Module"/}
+            dst=$dstpatt
+            srcname=${src%/}
+            # expand destination pathname
+            case $dst in
+                */)
+                    dst+=${srcname##*/}
+                    ;;
+            esac
+            dst=`eval echo "$dst"`
+            # TODO normalize path systematically
+            dstdir="\$(STAGEDIR)/${dst%/*}/"
+            dst=${dst#./}
+            dstdir=${dstdir%./}
+            dstpath=$dst
+            # make explicit whether source is a directory or not in its name
+            if [ -d "$Module/$src" ]; then
+                src=${src%/}/
+                dstpath+=/
+            fi
+            # generate staging rule
+            echo "stage: \$(STAGEDIR)/$dst"
+            echo "\$(STAGEDIR)/$dst: $Module/$srcname $dstdir"
+            case $src in
+                */) # a directory
+                    # TODO is it better if we make rules for individual files?
+                    echo "	mkdir -p \$@"
+                    echo "	cp -rf \$</* \$@/"
+                    echo "# XXX make doesn't know if files are changed inside a directory"
+                    echo ".PHONY: \$(STAGEDIR)/$dst"
+                    ;;
+                *) # a file
+                    echo "	cp -f \$< \$@"
+                    ;;
+            esac
+            # record in stage contents
+            echo "./$dstpath" >>"$BUILDDIR"/stage.contents
+            # remember destination directory for later
+            dstdirs+=("$dstdir")
+        done
     done <"$Module"/.module.install 
     echo
 done
