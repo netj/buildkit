@@ -3,6 +3,7 @@
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2011-01-30
 set -eu
+unset CDPATH
 
 # nothing to do without a stage :)
 [ -d "$STAGEDIR" ] || exit 0
