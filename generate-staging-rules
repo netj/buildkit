@@ -4,6 +4,7 @@
 # Created: 2010-07-24
 set -eu
 unset CDPATH
+shopt -s extglob
 
 echo '# Make rules for installing modules on stage'
 echo -n '# Generated: '; date +%FT%T%:z
