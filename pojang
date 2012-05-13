@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/usr/bin/env bash
 # pojang -- build an executable by packing given files and dirs
 # Home: http://netj.org/2008/03/pojang
 # Author: Jaeho Shin <netj@sparcs.org>
@@ -29,6 +29,7 @@
 #   ./mytool-in-a-file
 #   mv mytool-in-a-file .Trash/
 #   scp tool somehost:bin/
+set -eu
 
 # show usage
 if [ $# -lt 4 ]; then
@@ -38,6 +39,9 @@ fi
 
 Product=$1; shift
 BaseDir=$1; shift
+
+# sanitize environment
+CDPATH=
 
 # check entry
 Entry=$1; shift
@@ -59,29 +63,35 @@ packageId() {
     fi
 }
 
-# begin with the pojang driver
+## generate a self-extracting shell script archive
 : ${PACKAGENAME:=`basename "$PWD"`}
 : ${PACKAGEID:=`packageId "$@"`}
+# we need a end-of-package marker
+EndMarker=.pojang.$PACKAGEID.o
+trap "rm -f $EndMarker" EXIT
+echo "$PACKAGEID" >"$BaseDir"/$EndMarker
 drvlen=`sed -ne '/<<DRV$/,/^DRV/p' <"$0" | wc -l | tr -d " "`
 {
+# begin with the pojang driver
 cat <<DRV
 #!/bin/sh -e
-# an executable packed with pojang -- http://netj.org/2008/03/pojang
-bundle=/tmp/pojang-\$USER/$PACKAGENAME/$PACKAGEID
-if ! [ -e \$bundle.ok ]; then
-    mkdir -p \$bundle
-    tail -n +$drvlen "\$0" | gzip -d | (cd \$bundle; tar xpf -)
-    touch \$bundle.ok
-fi
-exec \$bundle/$Entry "\$@"
+# $PACKAGENAME self-extracting executable
+d=/tmp/$PACKAGENAME-\$USER/$PACKAGEID
+[ -e \$d.o ] || {
+    mkdir -p \$d; tail -n +$drvlen "\$0" | gzip -d | tar xpf - -C \$d
+    o=\$d/$EndMarker
+    [ -e \$o ] || { echo "\$0: package corrupt" >&2; exit 255; }
+    rm -f \$o; touch \$d.o
+}
+exec \$d/$Entry "\$@"
 DRV
-echo "# end of pojang driver, package content follows"
+echo "# end of pojang driver (https://github.com/netj/BuildKit), content follows:"
 
 # and the tar archive follows
 (
 cd "$BaseDir"
-tar cf - --format=posix "$@"
-) | gzip
+tar czf - "$@" $EndMarker
+)
 } >"$Product"
 chmod +x "$Product"
 
