@@ -6,11 +6,12 @@ set -eu
 unset CDPATH
 shopt -s extglob
 
-echo '# Make rules for installing modules on stage'
+echo '# Make rules for staging products of every module'
 echo -n '# Generated: '; date +%FT%T%:z
 echo
 
 dstdirs=()
+varsrcpatts=()
 
 : >"$BUILDDIR"/stage.contents
 for Module; do
@@ -21,11 +22,16 @@ for Module; do
     while read line; do
         # discard comments and empty lines
         line=${line%%#*}
+        # XXX whitespace in .module.install is disallowed because of these two lines
         line=${line//[	 ]/ }
         read srcpatt dstpatt rest <<<"$line" || continue
         [ -n "$srcpatt" -a -n "$dstpatt" ] || continue
+        numSrcs=0
+        lastSrc=
         # expand source pathname
         for src in "$Module"/$srcpatt; do
+            let ++numSrcs
+            lastSrc=$src
             src=${src#"$Module"/}
             dst=$dstpatt
             srcname=${src%/}
@@ -51,10 +57,10 @@ for Module; do
             echo "\$(STAGEDIR)/$dst: $Module/$srcname $dstdir"
             case $src in
                 */) # a directory
-                    # TODO is it better if we make rules for individual files?
+                    # TODO is it better if we make rules for individual files under $src/?
                     echo "	mkdir -p \$@"
                     echo "	cp -rf \$</* \$@/"
-                    echo "# XXX make doesn't know if files are changed inside a directory"
+                    echo "# XXX always copying since Make doesn't know if files are changed inside a directory or not"
                     echo ".PHONY: \$(STAGEDIR)/$dst"
                     ;;
                 *) # a file
@@ -66,6 +72,8 @@ for Module; do
             # remember destination directory for later
             dstdirs+=("$dstdir")
         done
+        [ $numSrcs -eq 1 -a x"$lastSrc" = x"$Module/$srcpatt" ] ||
+            varsrcpatts+=("$Module/$srcpatt")
     done <"$Module"/.module.install 
     echo
 done
@@ -103,6 +111,17 @@ mv -f stage.contents.sorted stage.contents
 rm -f parents
 sed -n '\:/$: s:/$:\\(/.*\\)\\?$:p' <stage.contents >stage.contents.dirs
 )
+
+# generate what's to be done after staging
 echo "stage:"
 echo '	STAGEDIR=$(STAGEDIR) BUILDDIR=$(BUILDDIR) \'
 echo "remove-stale-files"
+echo '	### BuildKit: staged all modules'
+# XXX warning about variable source patterns in .module.install files
+if [ ${#varsrcpatts[@]} -gt 0 ]; then
+    echo '	@echo >&2'
+    echo '	@echo "### BuildKit: WARNING! Run \`make index\` after adding/removing following files:" >&2'
+    for varsrcpatt in "${varsrcpatts[@]}"; do
+        echo '	@echo "###   '"$varsrcpatt"'" >&2'
+    done
+fi
