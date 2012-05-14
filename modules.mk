@@ -19,9 +19,13 @@ MODULES:=$(shell $(BUILDKIT)/all-modules | $(BUILDKIT)/order-by-depends)
 export PREFIX
 
 
-.PHONY: all build index stage clean package install
+.PHONY: all build index stage polish test clean package install
 
-all: stage
+all: test
+
+test: polish
+
+polish: stage
 
 stage: build
 
@@ -52,7 +56,7 @@ ifdef PACKAGEEXECUTES
 # use pojang for creating an executable package
 PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).sh
 package: $(PACKAGE)
-$(PACKAGE): stage
+$(PACKAGE): polish
 	@\
 	    PACKAGENAME=$(PACKAGENAME) \
 	    pojang $@ $(STAGEDIR) $(PACKAGEEXECUTES) . \
@@ -70,7 +74,7 @@ else
 # otherwise, just create an ordinary tarball
 PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).tar.gz
 package: $(PACKAGE)
-$(PACKAGE): stage
+$(PACKAGE): polish
 	@tar czf $@ -C $(STAGEDIR) .
 	### BuildKit: packaged as $(PACKAGE)
 
