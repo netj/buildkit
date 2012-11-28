@@ -4,6 +4,7 @@
 # Created: 2010-07-24
 set -eu
 unset CDPATH
+set -o braceexpand
 shopt -s extglob
 
 echo '# Make rules for staging products of every module'
@@ -29,7 +30,8 @@ for Module; do
         numSrcs=0
         lastSrc=
         # expand source pathname
-        for src in "$Module"/$srcpatt; do
+        eval set -- "$Module"/$srcpatt
+        for src in "$@"; do
             let ++numSrcs
             lastSrc=$src
             src=${src#"$Module"/}
@@ -72,8 +74,12 @@ for Module; do
             # remember destination directory for later
             dstdirs+=("$dstdir")
         done
+        # skip if only a single rule was generated, or
         [ $numSrcs -eq 1 -a x"$lastSrc" = x"$Module/$srcpatt" ] ||
-            varsrcpatts+=("$Module/$srcpatt")
+        # if no glob or extglob pattern, or
+        [ x"${srcpatt//[?*[\]]/}" = x"$srcpatt" -a x"${srcpatt//[?*+@!]\(/}" = x"$srcpatt" ] ||
+        # remember this is a variable src pattern to show a warning later
+        varsrcpatts+=("$Module/$srcpatt")
     done <"$Module"/.module.install 
     echo
 done
