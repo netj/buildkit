@@ -15,7 +15,7 @@ BUILD_TIMESTAMP_FMT:="$(BUILDDIR)/%s/build.timestamp"
 PREFIX?=/usr/local
 PACKAGENAME?=$(shell basename $(PWD))
 PACKAGEVERSION?=$(shell $(BUILDKIT)/determine-package-version)
-MODULES:=$(shell $(BUILDKIT)/all-modules | $(BUILDKIT)/order-by-depends)
+MODULES?=$(shell $(BUILDKIT)/all-modules | $(BUILDKIT)/order-by-depends)
 export PREFIX
 
 
