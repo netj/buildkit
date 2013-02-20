@@ -8,7 +8,7 @@ PATH:=$(BUILDKIT):$(PATH)
 CDPATH:=
 export SHELL PATH CDPATH
 
-STAGEDIR?=.stage
+STAGEDIR?=@prefix@
 BUILDDIR?=.build
 BUILD_TIMESTAMP_FMT:="$(BUILDDIR)/%s/build.timestamp"
 
