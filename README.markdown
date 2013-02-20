@@ -9,22 +9,22 @@ Quick Start
 
 For each module, create following files:
 
- * .module.build
-     An optional executable script that handles the actual build jobs
-     of the module.
- * .module.install
-     A table that specifies how files of a module should be installed.
-     First column is the relative path to the file in the module, and
-     second column is the destination path, where it should be
-     installed under the STAGEDIR.  You can use environment variables
-     with sh-style syntax on the second column, e.g.
+.module.build
+: An optional executable script that handles the actual build jobs of the
+module.
 
-       myscript.sh     $BINDIR/myscript
-       mydata.txt      $DATADIR/
+.module.install
+: A table that specifies how files of a module should be installed.  First
+column is the relative path to the file in the module, and second column is the
+destination path, where it should be installed under the STAGEDIR.  You can use
+environment variables with sh-style syntax on the second column, e.g.,
 
- * .module.depends
-     A list of names of other modules that this module depends on.
-     They will be built before this module is built.
+        myscript.sh     $BINDIR/myscript
+        mydata.txt      $DATADIR/
+
+.module.depends
+: A list of names of other modules that this module depends on.  They will be
+built before this module is built.
 
 Next, from your Makefile, define the environment variables you want to use in
 .module.install files first:
