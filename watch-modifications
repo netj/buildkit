@@ -7,7 +7,7 @@ shopt -s extglob
 
 # abort if already running
 pid="$BUILDDIR"/watch.pid
-if [ -s "$pid" ] && ps -o command= -p "$(cat "$pid" 2>/dev/null)" | grep -q watchmedo; then
+if [ -s "$pid" ] && ps -o command= -p $(cat "$pid" 2>/dev/null) | grep -q watchmedo; then
     exit 0
 else
     rm -f "$pid"
@@ -56,6 +56,7 @@ watchmedo shell-command --recursive \
         case $path in
             */.module.install)
                 rm -fv stage.mk
+                case $event in created|deleted|moved) break ;; esac
                 ;;
             */.module.build|*/.module.depends)
                 rm -fv build.mk
@@ -63,8 +64,8 @@ watchmedo shell-command --recursive \
         esac
     done
     # watchmedo stays alive although the pipe sink exits, so kill it
-    kill -TERM -$(ps -o pgid= -p $BASHPID)
+    kill -TERM -$(ps -o pgid= -p $BASHPID | tr -d ' ')
 } &
 
 # record PGID
-ps -o pgid= -p "$!" >"$pid"
+ps -o pgid= -p "$!" | tr -d ' ' >"$pid"
