@@ -4,4 +4,9 @@
 # See: http://stackoverflow.com/questions/1668284/bash-script-to-find-the-most-recently-modified-file
 # XXX BSD xargs has a max line limit of 5000, so `xargs ls -dt` does not work for a long list of files.
 export LC_ALL=C
-find "$@" -print0 | xargs -0 stat -c $'%Y\t%n' | sort -nr -k1,1 | cut -f2-
+find "$@" -print0 | xargs -0 python -c '
+import sys
+from os.path import getmtime
+for f in sys.argv[1:]:
+    print "%f\t%s" % (getmtime(f), f)
+' | sort -nr -k1,1 | cut -f2-
