@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# generate-build-rules -- Generate make rules for building each module
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-04-08
+set -eu
+unset CDPATH
+set -o braceexpand
+shopt -s extglob
+
+echo '# Make rules for building every module'
+echo -n '# Generated: '; date +%FT%T%:z
+echo
+
+suffixBuilt=.built
+suffixModified=.lastmodified
+
+for Module; do
+    echo "# $Module"
+    MODULE_PATH=$Module
+    MODULE_NAME=${Module##*/}
+    if [ -x "$Module"/.module.build ]; then
+        echo "build: \$(BUILDDIR)/$Module$suffixBuilt"
+        # dependencies
+        if [ -e "$Module"/.module.depends ]; then
+            sed 's/[[:space:]]*#.*//' <"$Module"/.module.depends | grep -v '^$' |
+            while read -r dep; do
+                echo "#  $Module -> $dep"
+                echo "\$(BUILDDIR)/$Module$suffixBuilt: \$(BUILDDIR)/$dep$suffixBuilt"
+            done
+        fi
+        # build rule
+        echo "\$(BUILDDIR)/$Module$suffixBuilt: \$(BUILDDIR)/$Module$suffixModified"
+        echo "	cd '$Module' && ./.module.build '$Module'"
+        echo "	@mkdir -p '\$(@D)' && touch '\$@'"
+    else
+        echo '#  (no executable .module.build)'
+    fi
+    echo
+done

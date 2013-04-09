@@ -55,7 +55,7 @@ for Module; do
                 dstpath+=/
             fi
             # generate staging rule
-            echo "stage: \$(STAGEDIR)/$dst"
+            echo "\$(BUILDDIR)/staged: \$(STAGEDIR)/$dst"
             echo "\$(STAGEDIR)/$dst: $Module/$srcname $dstdir"
             case $src in
                 */) # a directory
@@ -119,7 +119,7 @@ sed -n '\:/$: s:/$:\\(/.*\\)\\?$:p' <stage.contents >stage.contents.dirs
 )
 
 # generate what's to be done after staging
-echo "stage:"
+echo '$(BUILDDIR)/staged:'
 echo '	STAGEDIR=$(STAGEDIR) BUILDDIR=$(BUILDDIR) \'
 echo "remove-stale-files"
 echo '	### BuildKit: staged all modules'

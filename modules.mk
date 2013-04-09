@@ -10,12 +10,11 @@ export SHELL PATH CDPATH
 
 STAGEDIR?=@prefix@
 BUILDDIR?=.build
-BUILD_TIMESTAMP_FMT:="$(BUILDDIR)/%s/build.timestamp"
 
 PREFIX?=/usr/local
 PACKAGENAME?=$(shell basename $(PWD))
 PACKAGEVERSION?=$(shell $(BUILDKIT)/determine-package-version)
-MODULES?=$(shell $(BUILDKIT)/all-modules | $(BUILDKIT)/order-by-depends)
+MODULES?=
 export PREFIX
 
 
@@ -29,26 +28,57 @@ polish: stage
 
 stage: build
 
-build:
-	@\
-	    buildable-modules $(MODULES) | \
-	    xargs modified-modules $(BUILD_TIMESTAMP_FMT) | \
-	    xargs build-modules $(BUILD_TIMESTAMP_FMT) \
-	    # TODO we'll soon need to consider dependencies between modules :(
-ifndef BUILD_BEFORE_STAGING
-	### BuildKit: built all modules
-
+ifdef STAGING
+stage: $(BUILDDIR)/staged
+# staging rules
 include $(BUILDDIR)/stage.mk
 index \
-$(BUILDDIR)/stage.mk: $(BUILDKIT)/generate-staging-rules $(BUILDKIT)/modules.mk $(MODULES:%=%/.module.install)
+$(BUILDDIR)/stage.mk: $(BUILDDIR)/modules \
+                      $(BUILDKIT)/generate-staging-rules $(BUILDKIT)/modules.mk
 	### BuildKit: generating staging rules
-	@mkdir -p $(BUILDDIR)
-	@# To determine correct staging rules, we need a prior build
-	@$(MAKE) BUILD_BEFORE_STAGING=required build
-	@\
-	    STAGEDIR=$(STAGEDIR) BUILDDIR=$(BUILDDIR) \
-	    generate-staging-rules >$(BUILDDIR)/stage.mk $(MODULES) \
-	    #
+	@mkdir -p $(@D)
+	@BUILDDIR=$(BUILDDIR) xargs generate-staging-rules <$< >$(BUILDDIR)/stage.mk
+build:
+
+else # !STAGING
+
+stage index:
+	@$(MAKE) STAGING=yes $@
+
+# When watching filesystem isn't possible, invalidate some timestamps 
+watch_files := $(shell \
+    find $(BUILDDIR) -name '*.lastmodified' -exec rm -vf {} \;; \
+)
+# We won't touch $(BUILDDIR)/modules, so any change to .module.install or .module.build
+# can be reflected by doing a "make clean".
+
+build:
+	### BuildKit: built all modules
+
+endif # STAGING
+
+
+# build rules
+include $(BUILDDIR)/build.mk
+$(BUILDDIR)/build.mk: $(BUILDDIR)/modules \
+                      $(BUILDKIT)/generate-build-rules $(BUILDKIT)/modules.mk
+	### BuildKit: generating build rules
+	@mkdir -p $(@D)
+	@xargs generate-build-rules <$< >$@
+$(BUILDDIR)/%.lastmodified:
+	@mkdir -p "$(@D)"
+	@ln -sfn ../"$(shell sed 's:[^/]*/:../:g; s:[^/]*$$::' <<<"$*" \
+	    )$(shell $(BUILDKIT)/most-recently-modified-files "$*" | head -1)" "$@"
+
+
+# keep track of a list of modules
+$(BUILDDIR)/modules:
+	@mkdir -p $(@D)
+ifneq ($(MODULES),)
+	### BuildKit: MODULES="$(MODULES)"
+	@printf '%s\n' $(MODULES) >$@
+else
+	@all-modules >$@
 endif
 
 
