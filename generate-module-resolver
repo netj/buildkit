@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# generate-module-resolver -- Generate a script that resolves module name from file path
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-04-09
+set -eu
+echo '#!/bin/sh'
+echo 'for f; do'
+echo '  case $f in'
+while read -r Module; do
+    echo "    '$Module'|'$Module'/*)"
+    echo "      echo '$Module'"
+    echo '      ;;'
+done
+echo '  *)'
+echo '    false'
+echo '    ;;'
+echo '  esac'
+echo 'done'

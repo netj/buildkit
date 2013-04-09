@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# create-modules-lastmodified -- Create symlink for the module pointing to the
+#                                most recently modified file by scanning all files
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-04-09
+set -eu
+for Module; do
+    l="$BUILDDIR/$Module".lastmodified
+    d="$(dirname "$l")"
+    mf="$(most-recently-modified-files "$Module" | head -1)"
+    mkdir -p "$d"
+    relpath=$(relpath "$d" "$mf")
+    ln -sfn "$relpath" "$l"
+done

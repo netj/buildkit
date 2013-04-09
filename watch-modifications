@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# watch-modifications -- Watch modifications in given modules
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-04-09
+set -eu
+shopt -s extglob
+
+# abort if already running
+pid="$BUILDDIR"/watch.pid
+if [ -s "$pid" ] && ps -o command= -p "$(cat "$pid" 2>/dev/null)" | grep -q watchmedo; then
+    exit 0
+else
+    rm -f "$pid"
+fi
+
+# initialize module modifications
+[ -s "$BUILDDIR"/modules ]
+xargs <"$BUILDDIR"/modules -I{}  rm -f "$BUILDDIR"/{}.lastmodified
+
+# abort if we don't have watchmedo (See: https://pypi.python.org/pypi/watchdog)
+type watchmedo &>/dev/null
+
+# close I/O
+exec </dev/null >"$BUILDDIR"/watch.log 2>&1
+set -m
+
+# use watchmedo to incrementally update the lastmodified links
+# XXX Use Vim with :set nowritebackup to let watchmedo detect events with precise paths
+watchmedo shell-command --recursive \
+    --ignore-patterns="*/.git;*/.git/*;*/.build;*/.build/*;$BUILDDIR;$BUILDDIR/*;$STAGEDIR;$STAGEDIR/*" \
+    --command='echo ${watch_event_type} "${watch_src_path}"' |
+{
+    # track module modifications from individual file events
+    srcroot=$(pwd -P)
+    cd "$BUILDDIR"
+    eval "$(
+        echo 'which-module() {'
+        generate-module-resolver <modules 
+        echo '}'
+    )"
+    while read -t 1800 -r event abspath; do
+        echo "# $event $abspath"
+        case $abspath in
+            "$srcroot") path=. ;;
+            *) path=${abspath#$srcroot/} ;;
+        esac
+        # update lastmodified symlinks
+        if module=$(which-module "$path"); then
+            l="$module".lastmodified
+            relpath="$(relpath "$(dirname "$l")" "$abspath")"
+            ln -sfnv "$relpath" "$l"
+        else
+            echo >&2 "$path: module unknown"
+        fi
+        # invalidate generated make rules when module metadata are modified
+        case $path in
+            */.module.install)
+                rm -fv stage.mk
+                ;;
+            */.module.build|*/.module.depends)
+                rm -fv build.mk
+                ;;
+        esac
+    done
+    # watchmedo stays alive although the pipe sink exits, so kill it
+    kill -TERM -$(ps -o pgid= -p $BASHPID)
+} &
+
+# record PGID
+ps -o pgid= -p "$!" >"$pid"

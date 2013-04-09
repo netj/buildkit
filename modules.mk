@@ -45,12 +45,14 @@ else # !STAGING
 stage index:
 	@$(MAKE) STAGING=yes $@
 
-# When watching filesystem isn't possible, invalidate some timestamps 
+# Watch module modifications, or simply invalidate previous timestamps
 watch_files := $(shell \
-    find $(BUILDDIR) -name '*.lastmodified' -exec rm -vf {} \;; \
+    mkdir -p $(BUILDDIR) $(STAGEDIR); \
+    PATH=$(PATH) \
+    BUILDDIR=$(realpath $(BUILDDIR)) \
+    STAGEDIR=$(realpath $(STAGEDIR)) \
+    $(BUILDKIT)/watch-modifications \
 )
-# We won't touch $(BUILDDIR)/modules, so any change to .module.install or .module.build
-# can be reflected by doing a "make clean".
 
 build:
 	### BuildKit: built all modules
@@ -65,10 +67,6 @@ $(BUILDDIR)/build.mk: $(BUILDDIR)/modules \
 	### BuildKit: generating build rules
 	@mkdir -p $(@D)
 	@xargs generate-build-rules <$< >$@
-$(BUILDDIR)/%.lastmodified:
-	@mkdir -p "$(@D)"
-	@ln -sfn ../"$(shell sed 's:[^/]*/:../:g; s:[^/]*$$::' <<<"$*" \
-	    )$(shell $(BUILDKIT)/most-recently-modified-files "$*" | head -1)" "$@"
 
 
 # keep track of a list of modules
@@ -116,6 +114,7 @@ endif
 
 
 clean:
+	@-! [ -s $(BUILDDIR)/watch.pid ] || kill -TERM -$$(cat $(BUILDDIR)/watch.pid)
 	@rm -rf $(STAGEDIR) $(BUILDDIR) $(PACKAGE)
 	### BuildKit: cleaned
 

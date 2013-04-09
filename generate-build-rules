@@ -31,9 +31,11 @@ for Module; do
         # build rule
         echo "\$(BUILDDIR)/$Module$suffixBuilt: \$(BUILDDIR)/$Module$suffixModified"
         echo "	cd '$Module' && ./.module.build '$Module'"
-        echo "	@mkdir -p '\$(@D)' && touch '\$@'"
+        echo "	@mkdir -p '\$(@D)' && touch -r '\$<' '\$@'"
     else
         echo '#  (no executable .module.build)'
     fi
     echo
 done
+echo "\$(BUILDDIR)/%$suffixModified:"
+echo "	@BUILDDIR=\$(BUILDDIR) create-modules-lastmodified '\$*'"

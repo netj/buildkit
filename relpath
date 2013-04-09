@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+# relpath -- Compute relative path from one to the other
+# Usage: relpath [BASEPATH] PATH...
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-04-09
+
+# See: https://gist.github.com/SteveRyherd/5044132
+from sys import argv,exit
+from os import getcwd
+from os.path import relpath
+
+if len(argv) < 2:
+    print "Usage: relpath [BASEPATH] PATH..."
+    exit(1)
+elif len(argv) > 2:
+    base = argv[1]
+    paths = argv[2:]
+else:
+    base = getcwd()
+    paths = argv[1:]
+
+for p in paths:
+    print relpath(p, base)
