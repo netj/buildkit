@@ -2,17 +2,18 @@
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2010-07-25
 
-BUILDKIT?=$(shell pwd)/buildkit
+SRCROOT:=$(shell pwd)
+BUILDKIT?=$(SRCROOT)/buildkit
 SHELL:=$(shell which bash)
 PATH:=$(BUILDKIT):$(PATH)
 CDPATH:=
-export SHELL PATH CDPATH
+export SHELL PATH
 
 STAGEDIR?=@prefix@
 BUILDDIR?=.build
 
 PREFIX?=/usr/local
-PACKAGENAME?=$(shell basename $(PWD))
+PACKAGENAME?=$(shell basename $(SRCROOT))
 PACKAGEVERSION?=$(shell $(BUILDKIT)/determine-package-version)
 MODULES?=
 export PREFIX
@@ -118,3 +119,13 @@ clean:
 	@rm -rf $(STAGEDIR) $(BUILDDIR) $(PACKAGE)
 	### BuildKit: cleaned
 
+
+# generate some useful files to be used with BuildKit
+.gitignore .lvimrc:
+	cd $(shell $(BUILDKIT)/relpath $(SRCROOT) $(BUILDKIT)/template) && { \
+	    echo @@dot@@=.; \
+	    echo @@PACKAGENAME@@=$(PACKAGENAME); \
+	    echo @@PACKAGEVERSION@@=$(PACKAGEVERSION); \
+	    echo @@BUILDDIR@@=$(BUILDDIR); \
+	    echo @@STAGEDIR@@=$(STAGEDIR); \
+	} | customize $(shell $(BUILDKIT)/relpath $(BUILDKIT)/template $(SRCROOT)) $(@:.%=@@dot@@%)

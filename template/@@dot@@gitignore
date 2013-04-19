@@ -1,0 +1,10 @@
+*~
+.*.sw?
+.#*
+.DS_Store
+
+@@BUILDDIR@@
+/@@STAGEDIR@@
+/@@PACKAGENAME@@-*.tar.gz
+/@@PACKAGENAME@@-*.sh
+
