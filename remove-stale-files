@@ -18,7 +18,8 @@ find . | sort
 (
 cd "$BUILDDIR"
 comm -13 stage.contents stage.found |
-grep -vf stage.contents.dirs || true
+if ! [ -s stage.contents.dirs ]; then cat
+else grep -vf stage.contents.dirs; fi || true
 ) >"$BUILDDIR"/stage.stale
 
 # remove stale files from stage
