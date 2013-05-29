@@ -19,7 +19,7 @@ MODULES?=
 export PREFIX
 
 
-.PHONY: all build index stage polish test clean package install
+.PHONY: all build-dep build index stage polish test clean package install
 
 all: test
 
@@ -79,6 +79,11 @@ ifneq ($(MODULES),)
 else
 	@all-modules >$@
 endif
+
+
+# prepare build dependencies if necessary
+build: build-dep
+build-dep:
 
 
 ifdef PACKAGEEXECUTES
