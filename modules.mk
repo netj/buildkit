@@ -11,6 +11,8 @@ export SHELL PATH
 
 STAGEDIR?=@prefix@
 BUILDDIR?=.build
+DEPENDSDIR?=.depends
+PATH:=$(shell cd $(DEPENDSDIR) && pwd)/bin:$(PATH)
 
 PREFIX?=/usr/local
 PACKAGENAME?=$(shell basename $(SRCROOT))
@@ -19,7 +21,7 @@ MODULES?=
 export PREFIX
 
 
-.PHONY: all build-dep build index stage polish test clean package install
+.PHONY: all depends build index stage polish test clean package install
 
 all: test
 
@@ -82,8 +84,12 @@ endif
 
 
 # prepare build dependencies if necessary
-build: build-dep
-build-dep:
+build: depends
+depends: $(DEPENDSDIR)/bin
+$(DEPENDSDIR)/bin: $(BUILDKIT)/check-depends $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.sh
+	@mkdir -p $@
+	@$< $(DEPENDSDIR)
+	@touch $@
 
 
 ifdef PACKAGEEXECUTES
@@ -131,6 +137,7 @@ clean:
 	    echo @@dot@@=.; \
 	    echo @@PACKAGENAME@@=$(PACKAGENAME); \
 	    echo @@PACKAGEVERSION@@=$(PACKAGEVERSION); \
+	    echo @@DEPENDSDIR@@=$(DEPENDSDIR); \
 	    echo @@BUILDDIR@@=$(BUILDDIR); \
 	    echo @@STAGEDIR@@=$(STAGEDIR); \
 	} | customize $(shell $(BUILDKIT)/relpath $(BUILDKIT)/template $(SRCROOT)) $(@:.%=@@dot@@%)

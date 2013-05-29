@@ -8,3 +8,8 @@
 /@@PACKAGENAME@@-*.tar.gz
 /@@PACKAGENAME@@-*.sh
 
+/@@DEPENDSDIR@@
+!/@@DEPENDSDIR@@/*.commands
+!/@@DEPENDSDIR@@/*.sh
+!/@@DEPENDSDIR@@/*.txt
+

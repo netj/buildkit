@@ -29,7 +29,7 @@ for Module; do
             done
         fi
         # build rule
-        echo "\$(BUILDDIR)/$Module$suffixBuilt: \$(BUILDDIR)/$Module$suffixModified build-dep"
+        echo "\$(BUILDDIR)/$Module$suffixBuilt: \$(BUILDDIR)/$Module$suffixModified depends"
         echo "	cd '$Module' && ./.module.build '$Module'"
         echo "	@mkdir -p '\$(@D)' && touch -r '\$<' '\$@'"
     else

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# check-build-depends -- Check build dependencies
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-05-28
+set -eu
+
+DEPENDSDIR=${1:-$PWD/.depends}
+[ -d "$DEPENDSDIR" ] || exit 0
+export DEPENDSDIR
+
+for cmds in "$DEPENDSDIR"/*.commands; do
+    package=${cmds%.commands}
+    package=${package#$DEPENDSDIR/}
+    sed <"$cmds" 's/#.*$//; /^[ 	]*$/d' |
+    while read -r cmd; do
+        # check if command is available
+        if ! type "$cmd" &>/dev/null; then
+            # run shell script if exists
+            sh="$DEPENDSDIR"/"$package".sh
+            if [ -x "$sh" ]; then
+                echo "### BuildKit: preparing dependency $package"
+                "$sh"
+                break
+            fi
+            # TODO brew/apt-get/yum install based on uname
+            echo "### BuildKit: $cmd: command not found for dependency $package" >&2
+            # show instruction if exists
+            desc="$DEPENDSDIR"/"$package".txt
+            if [ -r "$desc" ]; then
+                cat "$desc" >&2
+                break
+            fi
+            false
+        fi
+    done
+    echo "### BuildKit: found dependency $package"
+done
