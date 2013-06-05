@@ -12,7 +12,6 @@ export SHELL PATH
 STAGEDIR?=@prefix@
 BUILDDIR?=.build
 DEPENDSDIR?=.depends
-DEPENDS := $(DEPENDSDIR)/bin
 PATH:=$(shell cd $(DEPENDSDIR) && pwd)/bin:$(PATH)
 
 PREFIX?=/usr/local
@@ -23,6 +22,8 @@ export PREFIX
 
 
 .PHONY: all depends build index stage polish test clean package install
+DEPENDS := $(DEPENDSDIR)/bin
+STAGED  := $(BUILDDIR)/staged
 
 all: test
 
@@ -33,7 +34,7 @@ polish: stage
 stage: build
 
 ifdef STAGING
-stage: $(BUILDDIR)/staged
+stage: $(STAGED)
 # staging rules
 include $(BUILDDIR)/stage.mk
 index \
