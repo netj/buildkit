@@ -31,7 +31,7 @@ for Module; do
         # build rule
         echo "\$(BUILDDIR)/$Module$suffixBuilt: \$(BUILDDIR)/$Module$suffixModified \$(DEPENDS)"
         echo "	cd '$Module' && ./.module.build '$Module'"
-        echo "	@mkdir -p '\$(@D)' && touch -r '\$<' '\$@'"
+        echo "	@mkdir -p '\$(@D)' && touch '\$@'"
     else
         echo '#  (no executable .module.build)'
     fi
