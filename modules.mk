@@ -12,6 +12,7 @@ export SHELL PATH
 STAGEDIR?=@prefix@
 BUILDDIR?=.build
 DEPENDSDIR?=.depends
+DEPENDS := $(DEPENDSDIR)/bin
 PATH:=$(shell cd $(DEPENDSDIR) && pwd)/bin:$(PATH)
 
 PREFIX?=/usr/local
@@ -85,12 +86,18 @@ endif
 
 # prepare build dependencies if necessary
 build: depends
-depends: $(DEPENDSDIR)/bin
-$(DEPENDSDIR)/bin: $(BUILDKIT)/check-depends $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.sh
+depends: $(DEPENDS)
+$(DEPENDS): $(BUILDKIT)/check-depends $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.sh
 	@mkdir -p $@
 	@$< $(DEPENDSDIR)
 	@touch $@
-
+# XXX To add more "depends" tasks, so they run before all the tasks "build"
+# depends on, you need to add the dependency edge to yours from $(DEPENDS),
+# instead of "depends", e.g.,
+#
+# 	$(DEPENDS): your-task
+# 	your-task:
+# 		...
 
 ifdef PACKAGEEXECUTES
 # use pojang for creating an executable package
