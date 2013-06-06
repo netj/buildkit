@@ -10,6 +10,7 @@
 
 /@@DEPENDSDIR@@
 !/@@DEPENDSDIR@@/*.commands
+!/@@DEPENDSDIR@@/*.paths
 !/@@DEPENDSDIR@@/*.sh
 !/@@DEPENDSDIR@@/*.txt
 
