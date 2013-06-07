@@ -22,7 +22,7 @@ export PREFIX
 
 
 .PHONY: all depends build index stage polish test clean package install
-DEPENDS := $(BUILDDIR)/depends.allFound
+DEPENDS := $(BUILDDIR)/depends.allfound
 STAGED  := $(BUILDDIR)/staged
 
 all: test
@@ -86,10 +86,12 @@ endif
 
 
 # prepare build dependencies if necessary
-build: depends
-depends: $(DEPENDS)
+build: $(DEPENDS)
+depends:
+	@rm -f $(DEPENDS)
+	@$(MAKE) $(DEPENDS)
 $(DEPENDS): $(BUILDKIT)/check-depends $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.paths
-	@mkdir -p $(DEPENDSDIR)
+	@mkdir -p $(DEPENDSDIR)/bin
 	@$< $(DEPENDSDIR)
 	@touch $@
 # XXX To add more "depends" tasks, so they run before all the tasks "build"
@@ -135,9 +137,23 @@ endif
 
 clean:
 	@-! [ -s $(BUILDDIR)/watch.pid ] || kill -TERM -$$(cat $(BUILDDIR)/watch.pid)
-	@rm -rf $(STAGEDIR) $(BUILDDIR) $(PACKAGE)
+	rm -rf -- $(STAGEDIR) $(BUILDDIR) $(PACKAGE)
 	### BuildKit: cleaned
 
+cleaner:
+	@find $(shell cat $(BUILDDIR)/modules 2>/dev/null || echo .) \
+	    -type d -name .build | xargs -t rm -rf --
+	@$(MAKE) clean
+	### BuildKit: cleaned all build artifacts
+
+clean-depends:
+	@git clean -xdf $(DEPENDSDIR)
+	@rm -f $(DEPENDS)
+	### BuildKit: cleaned dependencies
+
+gitclean:
+	@git clean -xdf
+	### BuildKit: cleaned with git
 
 # generate some useful files to be used with BuildKit
 .gitignore .lvimrc:
