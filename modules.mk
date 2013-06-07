@@ -22,7 +22,7 @@ export PREFIX
 
 
 .PHONY: all depends build index stage polish test clean package install
-DEPENDS := $(DEPENDSDIR)/bin
+DEPENDS := $(BUILDDIR)/depends.allFound
 STAGED  := $(BUILDDIR)/staged
 
 all: test
@@ -88,8 +88,8 @@ endif
 # prepare build dependencies if necessary
 build: depends
 depends: $(DEPENDS)
-$(DEPENDS): $(BUILDKIT)/check-depends $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.sh
-	@mkdir -p $@
+$(DEPENDS): $(BUILDKIT)/check-depends $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.paths
+	@mkdir -p $(DEPENDSDIR)
 	@$< $(DEPENDSDIR)
 	@touch $@
 # XXX To add more "depends" tasks, so they run before all the tasks "build"
