@@ -11,8 +11,7 @@ export SHELL PATH
 
 STAGEDIR?=@prefix@
 BUILDDIR?=.build
-DEPENDSDIR?=.depends
-PATH:=$(shell cd $(DEPENDSDIR) && pwd)/bin:$(PATH)
+#DEPENDSDIR?=.depends
 
 PREFIX?=/usr/local
 PACKAGENAME?=$(shell basename $(SRCROOT))
@@ -86,6 +85,11 @@ endif
 
 
 # prepare build dependencies if necessary
+ifndef DEPENDSDIR
+$(DEPENDS):
+	@touch $@
+else
+PATH:=$(shell cd $(DEPENDSDIR) && pwd)/bin:$(PATH)
 build: $(DEPENDS)
 depends:
 	@rm -f $(DEPENDS)
@@ -101,6 +105,7 @@ $(DEPENDS): $(BUILDKIT)/check-depends $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.p
 # 	$(DEPENDS): your-task
 # 	your-task:
 # 		...
+endif
 
 ifdef PACKAGEEXECUTES
 # use pojang for creating an executable package
