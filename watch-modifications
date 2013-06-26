@@ -25,17 +25,43 @@ exec </dev/null >"$BUILDDIR"/watch.log 2>&1
 set -m
 
 # use watchmedo to incrementally update the lastmodified links
-# XXX Use Vim with :set nowritebackup to let watchmedo detect events with precise paths
 watchmedo shell-command --recursive \
     --ignore-patterns="*/.git;*/.git/*;*/.build;*/.build/*;$BUILDDIR;$BUILDDIR/*;$STAGEDIR;$STAGEDIR/*" \
     --command='echo ${watch_event_type} "${watch_src_path}"' |
+{
+    # XXX A workaround for obscured file modified events
+    # Sometimes when files are modified with a text editor in some
+    # circumstances (e.g., Vim with 'writebackup' option on OS X), events for
+    # parent directories are detected instead.  Therefore, we need to translate
+    # directory events back to those for actual files contained in it.
+    while read event abspath; do
+        if [ -d "$abspath" ]; then
+            case $event in
+                modified)
+                    # find which file is modified in the directory
+                    found=false
+                    for f in "$abspath"/{,.}*; do
+                        ! [ -d "$f" ] || continue
+                        ! [ "$f" -ot "$abspath" ] || continue
+                        echo modified "$f"
+                        found=true
+                    done
+                    $found || echo modified "$abspath"
+                    continue
+                    ;;
+            esac
+        fi
+        echo "$event $abspath"
+    done
+} |
 {
     # track module modifications from individual file events
     srcroot=$(pwd -P)
     cd "$BUILDDIR"
     eval "$(
         echo 'which-module() {'
-        generate-module-resolver <modules 
+        sort -r modules |
+        generate-module-resolver
         echo '}'
     )"
     while read -t 1800 -r event abspath; do
@@ -47,7 +73,9 @@ watchmedo shell-command --recursive \
         # update lastmodified symlinks
         if module=$(which-module "$path"); then
             l="$module".lastmodified
-            relpath="$(relpath "$(dirname "$l")" "$abspath")"
+            ld=$(dirname "$l")
+            relpath="$(relpath "$ld" "$abspath")"
+            mkdir -p "$ld"
             ln -sfnv "$relpath" "$l"
         else
             echo >&2 "$path: module unknown"
