@@ -72,13 +72,25 @@ watchmedo shell-command --recursive \
         esac
         # update lastmodified symlinks
         if module=$(which-module "$path"); then
+            p=$abspath
+            case $event in
+                modified|created)
+                    [ -e "$p" ] || p=$(most-recently-modified-files \
+                        "$(dirname "$p")" -maxdepth 1 | head -n 1)
+                    ;;
+                deleted|moved|*)
+                    p=$(dirname "$p")
+                    ;;
+            esac
             l="$module".lastmodified
-            ld=$(dirname "$l")
-            relpath="$(relpath "$ld" "$abspath")"
-            mkdir -p "$ld"
-            ln -sfnv "$relpath" "$l"
+            if [ "$p" -nt "$l" ]; then
+                ld=$(dirname "$l")
+                relpath="$(relpath "$ld" "$p")"
+                mkdir -p "$ld"
+                ln -sfnv "$relpath" "$l"
+            fi
         else
-            echo >&2 "$path: module unknown"
+            echo >&2 "$path: module unknown; ignored"
         fi
         # invalidate generated make rules when module metadata are modified
         case $path in
