@@ -7,9 +7,8 @@ au!
 " .module.* involves mostly local stuff
 au BufEnter .module.* try | lcd %:h | catch /.*/ | endtry
 
-" BuildKit does not like Vim's default way of writing files
-" and, it's good to save everything before we actually make
-setlocal nowritebackup autowrite
+" It's good to save everything before we do :make
+setlocal autowrite
 
 " easy builds with Command-Return (Mac) or F5
 let $MAKEARGS = ""
