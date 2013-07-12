@@ -35,7 +35,7 @@ stage: build
 ifdef STAGING
 stage: $(STAGED)
 # staging rules
-include $(BUILDDIR)/stage.mk
+-include $(BUILDDIR)/stage.mk
 index \
 $(BUILDDIR)/stage.mk: $(BUILDDIR)/modules \
                       $(BUILDKIT)/generate-staging-rules $(BUILDKIT)/modules.mk
@@ -65,7 +65,7 @@ endif # STAGING
 
 
 # build rules
-include $(BUILDDIR)/build.mk
+-include $(BUILDDIR)/build.mk
 $(BUILDDIR)/build.mk: $(BUILDDIR)/modules \
                       $(BUILDKIT)/generate-build-rules $(BUILDKIT)/modules.mk
 	### BuildKit: generating build rules
