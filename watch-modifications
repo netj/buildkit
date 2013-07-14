@@ -15,7 +15,7 @@ fi
 
 # initialize module modifications
 [ -s "$BUILDDIR"/modules ]
-xargs <"$BUILDDIR"/modules -I{}  rm -f "$BUILDDIR"/{}.lastmodified
+xargs <"$BUILDDIR"/modules -I{}  rm -f "$BUILDDIR"/timestamp/{}.lastmodified
 
 # abort if we don't have watchmedo (See: https://pypi.python.org/pypi/watchdog)
 type watchmedo &>/dev/null
@@ -116,7 +116,7 @@ watchmedo shell-command --recursive \
                 module=${path%/*}
                 # when module is disappearing, take appropriate actions to clean up
                 case $event in deleted)
-                    l="$module".lastmodified
+                    l=timestamp/"$module".lastmodified
                     rm -fv "$l"
                     module=$(which-module "$module") || continue
                 esac
@@ -144,7 +144,7 @@ watchmedo shell-command --recursive \
                     p=$(dirname "$p")
                     ;;
             esac
-            l="$module".lastmodified
+            l=timestamp/"$module".lastmodified
             if [ "$p" -nt "$l" ]; then
                 ld=$(dirname "$l")
                 relpath="$(relpath "$ld" "$p")"

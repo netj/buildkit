@@ -5,7 +5,7 @@
 # Created: 2013-04-09
 set -eu
 for Module; do
-    l="$BUILDDIR/$Module".lastmodified
+    l="$BUILDDIR/timestamp/$Module".lastmodified
     d="$(dirname "$l")"
     mf="$(most-recently-modified-files "$Module" | head -1)"
     mkdir -p "$d"

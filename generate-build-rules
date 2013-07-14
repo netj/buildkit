@@ -11,7 +11,9 @@ echo '# Make rules for building every module'
 echo -n '# Generated: '; date +%FT%T%:z
 echo
 
+prefixBuilt=timestamp/
 suffixBuilt=.built
+prefixModified=timestamp/
 suffixModified=.lastmodified
 
 for Module; do
@@ -19,17 +21,17 @@ for Module; do
     MODULE_PATH=$Module
     MODULE_NAME=${Module##*/}
     if [ -x "$Module"/.module.build ]; then
-        echo "build: \$(BUILDDIR)/$Module$suffixBuilt"
+        echo "build: \$(BUILDDIR)/$prefixBuilt$Module$suffixBuilt"
         # dependencies
         if [ -e "$Module"/.module.depends ]; then
             sed 's/[[:space:]]*#.*//' <"$Module"/.module.depends | grep -v '^$' |
             while read -r dep; do
-                echo "#  $Module -> $dep"
-                echo "\$(BUILDDIR)/$Module$suffixBuilt: \$(BUILDDIR)/$dep$suffixBuilt"
+                echo "#  $Module depends on $dep"
+                echo "\$(BUILDDIR)/$prefixBuilt$Module$suffixBuilt: \$(BUILDDIR)/$prefixBuilt$dep$suffixBuilt"
             done
         fi
         # build rule
-        echo "\$(BUILDDIR)/$Module$suffixBuilt: \$(BUILDDIR)/$Module$suffixModified \$(DEPENDS)"
+        echo "\$(BUILDDIR)/$prefixBuilt$Module$suffixBuilt: \$(BUILDDIR)/$prefixModified$Module$suffixModified \$(DEPENDS)"
         echo "	cd '$Module' && ./.module.build '$Module'"
         echo "	@mkdir -p '\$(@D)' && touch '\$@'"
     else
@@ -37,5 +39,5 @@ for Module; do
     fi
     echo
 done
-echo "\$(BUILDDIR)/%$suffixModified:"
+echo "\$(BUILDDIR)/$prefixModified%$suffixModified:"
 echo "	@BUILDDIR=\$(BUILDDIR) create-modules-lastmodified '\$*'"
