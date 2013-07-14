@@ -24,6 +24,11 @@ type watchmedo &>/dev/null
 exec </dev/null >"$BUILDDIR"/watch.log 2>&1
 set -m
 
+msg() { echo >&2 "$@"; }
+error() { msg "$@"; }
+SRCROOT=$(pwd -P)
+coalesce_interval=0.1
+
 # use watchmedo to incrementally update the lastmodified links
 watchmedo shell-command --recursive \
     --ignore-patterns="*/.git;*/.git/*;*/.build;*/.build/*;$BUILDDIR;$BUILDDIR/*;$STAGEDIR;$STAGEDIR/*" \
@@ -39,15 +44,13 @@ watchmedo shell-command --recursive \
             case $event in
                 modified)
                     # find which file is modified in the directory
-                    found=false
                     for f in "$abspath"/{,.}*; do
                         ! [ -d "$f" ] || continue
                         ! [ "$f" -ot "$abspath" ] || continue
-                        echo modified "$f"
-                        found=true
+                        #msg "# interpreting instead as modified ${f#$SRCROOT/}"
+                        abspath=$f
+                        break
                     done
-                    $found || echo modified "$abspath"
-                    continue
                     ;;
             esac
         fi
@@ -55,23 +58,82 @@ watchmedo shell-command --recursive \
     done
 } |
 {
+    # Coalesce a series of "deleted, created, modified" events into a single
+    # "modified" event
+    while read event abspath; do
+        if [ x"$event" = x"deleted" ] && read -t $coalesce_interval event2 abspath2; then
+            if [ x"$event2" = x"created" -a x"$abspath2" = x"$abspath" ] && read -t $coalesce_interval event3 abspath3; then
+                if ! [ x"$event3" = x"modified" -a x"$abspath3" = x"$abspath" ]; then
+                    echo "$event $abspath"
+                    echo "$event2 $abspath2"
+                fi
+                event=$event3 abspath=$abspath3
+            else
+                echo "$event $abspath"
+                event=$event2 abspath=$abspath2
+            fi
+        fi
+        echo "$event $abspath"
+    done
+} |
+{
+    # watchmedo stays alive although the pipe sink exits, so kill it
+    trap 'kill -TERM -$(ps -o pgid= -p $BASHPID | tr -d " ")' EXIT
     # track module modifications from individual file events
-    srcroot=$(pwd -P)
     cd "$BUILDDIR"
-    eval "$(
-        echo 'which-module() {'
-        sort -r modules |
-        generate-module-resolver
-        echo '}'
-    )"
+    reload-module-map() {
+        [ watch.modules -ot modules ] || return 0
+        msg "## loading module map"
+        eval "$(
+            echo 'which-module() {'
+            sort -r modules | tee watch.modules |
+            generate-module-resolver
+            echo '}'
+        )"
+    }
+    rescan-modules() {
+        msg "## rescanning modules"
+        (
+        cd "$SRCROOT"
+        all-modules >"$BUILDDIR"/modules.scanning
+        mv -f "$BUILDDIR"/modules.scanning "$BUILDDIR"/modules
+        ) &
+    }
+    rm -f watch.modules; reload-module-map
     while read -t 1800 -r event abspath; do
-        echo "# $event $abspath"
         case $abspath in
-            "$srcroot") path=. ;;
-            *) path=${abspath#$srcroot/} ;;
+            "$BUILDKIT"@(|/*)) continue ;;
+            "$SRCROOT") path=. ;;
+            *) path=${abspath#$SRCROOT/} ;;
         esac
-        # update lastmodified symlinks
-        if module=$(which-module "$path"); then
+        module=
+        reload-module-map
+        # invalidate generated make rules when module metadata is modified
+        case $path in
+            */.module.install)
+                case $event in created|deleted|moved) rescan-modules ;; esac
+                rm -fv stage.mk
+                module=${path%/*}
+                # when module is disappearing, take appropriate actions to clean up
+                case $event in deleted)
+                    l="$module".lastmodified
+                    rm -fv "$l"
+                    module=$(which-module "$module") || continue
+                esac
+                ;;
+            */.module.@(build|.depends))
+                rm -fv build.mk
+                ;;
+            */*)
+                ;;
+            *)
+                # stay quiet about events on files at the top $SRCROOT directory
+                continue
+                ;;
+        esac
+        if module=${module:-$(which-module "$path")}; then
+            # update lastmodified symlinks
+            msg "# $event $path"
             p=$abspath
             case $event in
                 modified|created)
@@ -90,21 +152,9 @@ watchmedo shell-command --recursive \
                 ln -sfnv "$relpath" "$l"
             fi
         else
-            echo >&2 "$path: module unknown; ignored"
+            error "ignored $path for not belonging to any module"
         fi
-        # invalidate generated make rules when module metadata are modified
-        case $path in
-            */.module.install)
-                rm -fv stage.mk
-                case $event in created|deleted|moved) break ;; esac
-                ;;
-            */.module.build|*/.module.depends)
-                rm -fv build.mk
-                ;;
-        esac
     done
-    # watchmedo stays alive although the pipe sink exits, so kill it
-    kill -TERM -$(ps -o pgid= -p $BASHPID | tr -d ' ')
 } &
 
 # record PGID

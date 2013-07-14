@@ -53,6 +53,7 @@ stage index:
 watch_files := $(shell \
     mkdir -p $(BUILDDIR) $(STAGEDIR); \
     PATH=$(PATH) \
+    BUILDKIT=$(realpath $(BUILDKIT)) \
     BUILDDIR=$(realpath $(BUILDDIR)) \
     STAGEDIR=$(realpath $(STAGEDIR)) \
     $(BUILDKIT)/watch-modifications \

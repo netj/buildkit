@@ -7,12 +7,12 @@ echo '#!/bin/sh'
 echo 'for f; do'
 echo '  case $f in'
 while read -r Module; do
-    echo "    '$Module'|'$Module'/*)"
+    echo "    '$Module'/*)"
     echo "      echo '$Module'"
     echo '      ;;'
 done
-echo '  *)'
-echo '    false'
-echo '    ;;'
+echo '    *)'
+echo '      false'
+echo '      ;;'
 echo '  esac'
 echo 'done'
