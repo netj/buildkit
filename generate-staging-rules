@@ -47,7 +47,7 @@ for Module; do
             # TODO normalize path systematically
             dstdir="\$(STAGEDIR)/${dst%/*}/"
             dst=${dst#./}
-            dstdir=${dstdir%./}
+            dstdir=${dstdir//\/.\///}
             dstpath=$dst
             # make explicit whether source is a directory or not in its name
             if [ -d "$Module/$src" ]; then
@@ -89,8 +89,13 @@ if [ ${#dstdirs[@]} -gt 0 ]; then
     echo "# Directories"
     printf '%s\n' "${dstdirs[@]}" | awk '!a[$0]++ {print}' |
     while read dstdir; do
-        echo "$dstdir:"
-        echo "	mkdir -p \$@"
+        dstpath=".${dstdir#\$(STAGEDIR)}"
+        if grep -qxF "$dstpath" <"$BUILDDIR"/stage.contents; then
+            echo "#$dstdir: # custom rule creation exists"
+        else
+            echo "$dstdir:"
+            echo "	mkdir -p \$@"
+        fi
     done
 fi
 
