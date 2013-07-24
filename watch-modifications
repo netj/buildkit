@@ -24,7 +24,7 @@ type watchmedo &>/dev/null
 exec </dev/null >"$BUILDDIR"/watch.log 2>&1
 set -m
 
-msg() { echo >&2 "$@"; }
+msg() { echo >&2 "# $(date +%FT%T)" "$@"; }
 error() { msg "$@"; }
 SRCROOT=$(pwd -P)
 coalesce_interval=0.1
@@ -32,7 +32,7 @@ coalesce_interval=0.1
 # use watchmedo to incrementally update the lastmodified links
 watchmedo shell-command --recursive \
     --ignore-patterns="*/.git;*/.git/*;*/.build;*/.build/*;$BUILDDIR;$BUILDDIR/*;$STAGEDIR;$STAGEDIR/*" \
-    --command='echo ${watch_event_type} "${watch_src_path}"' |
+    --command='echo ${watch_event_type} "${watch_src_path}" || kill -TERM $PPID' |
 {
     # XXX A workaround for obscured file modified events
     # Sometimes when files are modified with a text editor in some
@@ -76,7 +76,8 @@ watchmedo shell-command --recursive \
         echo "$event $abspath"
     done
 } |
-{
+(
+    msg "### start watching for modifications"
     # watchmedo stays alive although the pipe sink exits, so kill it
     trap 'kill -TERM -$(ps -o pgid= -p $BASHPID | tr -d " ")' EXIT
     # track module modifications from individual file events
@@ -101,8 +102,11 @@ watchmedo shell-command --recursive \
     }
     rm -f watch.modules; reload-module-map
     while read -t 1800 -r event abspath; do
+        ! [ -L "$abspath" ] || continue
+        abspath="$(cd "$(dirname "$abspath")" && pwd -P)/$(basename "$abspath")"
         case $abspath in
             "$BUILDKIT"@(|/*)) continue ;;
+            */.build|*/.build/*) continue ;;
             "$SRCROOT") path=. ;;
             *) path=${abspath#$SRCROOT/} ;;
         esac
@@ -155,7 +159,8 @@ watchmedo shell-command --recursive \
             error "ignored $path for not belonging to any module"
         fi
     done
-} &
+    msg "### stopped watching modifications after timeout"
+) &
 
 # record PGID
 ps -o pgid= -p "$!" | tr -d ' ' >"$pid"
