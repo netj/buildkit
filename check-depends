@@ -28,7 +28,6 @@ while read -r dep; do
             return $?
         fi
         # TODO brew/apt-get/yum install based on uname
-        echo "### BuildKit: $cmd: command not found for dependency $dep" >&2
         # show instruction if exists
         desc=$(dep txt)
         if [ -r "$desc" ]; then
@@ -49,22 +48,30 @@ while read -r dep; do
     cmds=$(dep commands)
     if [ -r "$cmds" ]; then
         without-comments "$cmds" |
+        (set -e; trap mark-failed EXIT
         while read -r cmd; do
-            type "$cmd" &>/dev/null ||
-                prepare-dependency ||
-                mark-failed
+            found() { type "$cmd" &>/dev/null; }
+            ! found || continue
+            ! prepare-dependency || ! found || continue
+            echo >&2 "### BuildKit: $cmd: command not found for dependency $dep"
+            exit 2
         done
+        trap - EXIT)
     fi
 
     # check if all required paths exists
     paths=$(dep paths)
     if [ -r "$paths" ]; then
         without-comments "$paths" |
+        (set -e; trap mark-failed EXIT
         while read -r path; do
-            (cd "$DEPENDSDIR" && [ -e "$path" ]) ||
-                prepare-dependency ||
-                mark-failed
+            found() { (cd "$DEPENDSDIR" && [ -e "$path" ]); }
+            ! found || continue
+            ! prepare-dependency || ! found || continue
+            echo >&2 "### BuildKit: $path: path not found for dependency $dep"
+            exit 4
         done
+        trap - EXIT)
     fi
 
     if ! [ -e "$failed" ]; then
