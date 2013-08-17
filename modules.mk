@@ -95,7 +95,8 @@ build: $(DEPENDS)
 depends:
 	@rm -f $(DEPENDS)
 	@$(MAKE) $(DEPENDS)
-$(DEPENDS): $(BUILDKIT)/check-depends $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.paths
+$(DEPENDS): $(BUILDKIT)/check-depends $(BUILDKIT)/generate-depends-checker \
+    $(wildcard $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.paths $(DEPENDSDIR)/*.test.sh)
 	@mkdir -p $(DEPENDSDIR)/bin
 	@$< $(DEPENDSDIR)
 	@touch $@

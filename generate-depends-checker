@@ -32,6 +32,21 @@ esc() {
     fi
 }
 
+# include a shell (bash) script
+embed-script() {
+    local sh=$1
+    echo "  bash -c '"; esc <"$sh"; echo "'"
+}
+
+
+# prologue
+echo '#!/usr/bin/env bash
+set -eu
+: ${DEPENDSDIR:?path to the directory for keeping dependencies is required}
+msg() { echo "'"$Prefix"'$*"; }
+error() { msg >&2 "$@"; false; }
+'
+
 # enumerate dependencies from the specifications
 (
     cd "$DEPENDSDIR"
@@ -39,13 +54,9 @@ esc() {
         [ -e "$f" ] || continue
         echo "${f%.*}"
     done
-) | sort -u |
-{
-echo '#!/usr/bin/env bash
-set -eu
-msg() { echo "'"$Prefix"'$*"; }
-error() { msg >&2 "$@"; false; }
-'
+) | sort -u | {
+
+# dependency checker for each dependency declaration
 while read -r dep; do
     echo
     echo "### checking dependency $dep"
@@ -59,7 +70,7 @@ while read -r dep; do
     sh=$(dep sh)
     if [ -r "$sh" ]; then
         echo "  msg 'preparing dependency $dep'"
-        echo "  bash -c '"; esc <"$sh"; echo "'"
+        embed-script "$sh"
         echo '  return $?'
     fi
     # TODO brew/apt-get/yum install based on uname
@@ -74,7 +85,7 @@ while read -r dep; do
     checker-with-found-or-error() {
         local error=$1
         echo "found || prepare-dependency && found ||"
-        echo "  error '$error'"
+        echo "  error '$(esc "$error")'"
     }
 
     # check if all required commands are available
@@ -90,11 +101,23 @@ while read -r dep; do
     without-comments "$(dep paths)" |
     while read -r path; do
         echo "# check if path $path is available"
-        echo "found() { (cd '$DEPENDSDIR' && [ -e '$path' ]); }"
+        echo 'found() { (cd "$DEPENDSDIR" && [ -e '"'$(esc "$path")'"' ]); }'
         checker-with-found-or-error \
             "$path: path not found for dependency $dep"
     done
 
-    echo "msg 'found dependency $dep'"
+    # check if all test scripts runs fine
+    t=$(dep test.sh)
+    if [ -r "$t" ]; then
+        echo '# check further requirement for dependency'
+        echo 'found() {'
+        embed-script "$t"
+        echo '}'
+        checker-with-found-or-error \
+            "some requirements not met for dependency $dep"
+    fi
+
+    echo "msg 'found dependency $(esc "$dep")'"
 done
+
 }

@@ -4,5 +4,7 @@
 # Created: 2013-05-28
 set -eu
 
-generate-depends-checker "${1:-$PWD/.depends}" "### BuildKit: " |
-bash -eu
+depends=${1:-$PWD/.depends}
+
+generate-depends-checker "$depends" "### BuildKit: " |
+DEPENDSDIR=$depends  bash -eu
