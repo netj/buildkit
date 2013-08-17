@@ -11,15 +11,6 @@ DEPENDSDIR=$1
 
 Prefix=${2:-}
 
-# filter out all comments from given files
-without-comments() {
-    local f=
-    for f; do
-        [ -r "$f" ] || continue
-        sed 's/#.*$//; /^[ 	]*$/d' "$f"
-    done
-}
-
 # escape for enclosing in shell's single quote literal
 esc() {
     if [ $# -gt 0 ]; then

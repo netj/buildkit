@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# without-comments -- Filter out all lines that start with a hash (#)
+# Usage: without-comments [FILE]...
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-08-17
+set -eu
+
+for f; do
+    [ -r "$f" ] || continue
+    sed 's/#.*$//; /^[ 	]*$/d' "$f"
+done
