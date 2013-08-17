@@ -25,7 +25,7 @@ while read -r dep; do
         if [ -x "$sh" ]; then
             echo "### BuildKit: preparing dependency $dep"
             "$sh"
-            return 0
+            return $?
         fi
         # TODO brew/apt-get/yum install based on uname
         echo "### BuildKit: $cmd: command not found for dependency $dep" >&2
@@ -33,8 +33,15 @@ while read -r dep; do
         desc=$(dep txt)
         if [ -r "$desc" ]; then
             cat "$desc" >&2
-            return 0
+            return $?
         fi
+        false
+    }
+
+    failed=$(dep failed)
+    rm -f "$failed"
+    mark-failed() {
+        touch "$failed"
         false
     }
 
@@ -44,7 +51,8 @@ while read -r dep; do
         without-comments "$cmds" |
         while read -r cmd; do
             type "$cmd" &>/dev/null ||
-                prepare-dependency
+                prepare-dependency ||
+                mark-failed
         done
     fi
 
@@ -54,9 +62,14 @@ while read -r dep; do
         without-comments "$paths" |
         while read -r path; do
             (cd "$DEPENDSDIR" && [ -e "$path" ]) ||
-                prepare-dependency
+                prepare-dependency ||
+                mark-failed
         done
     fi
 
-    echo "### BuildKit: found dependency $dep"
+    if ! [ -e "$failed" ]; then
+        echo "### BuildKit: found dependency $dep"
+    else
+        exit 2
+    fi
 done
