@@ -61,7 +61,7 @@ for Module; do
                 */) # a directory
                     # TODO is it better if we make rules for individual files under $src/?
                     echo "	mkdir -p \$@"
-                    echo "	cp -rf \$</* \$@/"
+                    echo "	cp -rf \$</. \$@/"
                     echo "# XXX always copying since Make doesn't know if files are changed inside a directory or not"
                     echo ".PHONY: \$(STAGEDIR)/$dst"
                     ;;
