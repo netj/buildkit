@@ -52,16 +52,22 @@ fi
 
 # how to calculate its signature
 packageId() {
-    if type sha1sum >/dev/null 2>&1; then
-        (
-            cd "$BaseDir"
-            find "$@" -type f | xargs sha1sum
-            ls -lR "$@"
-        ) | sha1sum | sed 's/ .*$//'
+    (
+    cd "$BaseDir"
+    if type git >/dev/null; then
+        find "$@" -type f |
+        git hash-object --stdin-paths |
+        git hash-object --stdin
+    elif type sha1sum >/dev/null; then
+        {
+        find "$@" -type f | xargs sha1sum
+        ls -lR "$@"
+        } | sha1sum | sed 's/ .*$//'
     else
         date +%Y%m%d%H%M%S
     fi
-}
+    )
+} 2>/dev/null
 
 ## generate a self-extracting shell script archive
 : ${PACKAGENAME:=`basename "$PWD"`}
