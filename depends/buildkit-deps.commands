@@ -7,6 +7,7 @@ date
 dirname
 basename
 
+ln
 mv
 cp
 rm
@@ -29,12 +30,13 @@ diff
 comm
 tr
 wc
+#sha1sum # optional
 
 sed
 awk
 grep
 
-rsync
+#rsync # optional
 tar
 gzip
 
