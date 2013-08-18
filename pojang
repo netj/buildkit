@@ -59,7 +59,7 @@ packageId() {
             ls -lR "$@"
         ) | sha1sum | sed 's/ .*$//'
     else
-        date +%s.%N
+        date +%Y%m%d%H%M%S
     fi
 }
 
