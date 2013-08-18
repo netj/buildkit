@@ -7,12 +7,23 @@ unset CDPATH
 set -o braceexpand
 shopt -s extglob
 
+# commands for copying each file and directory to the stage
+stageFile() { echo "cp -f $1 $2"; }
+stageDir()  { echo "rm -rf $2; \\"; echo "cp -Rfa $1 $2"; }
+
+# use rsync for directory instead of cp -R when available
+if type rsync &>/dev/null; then
+    #stageFile() { echo "rsync $1 $2"; } # XXX using rsync for individual files is slower than cp
+    stageDir() { echo "rsync -aH $1 $2"; }
+fi
+
 echo '# Make rules for staging products of every module'
 echo -n '# Generated: '; date +%FT%T%:z
 echo
 
 dstdirs=()
 varsrcpatts=()
+
 
 : >"$BUILDDIR"/stage.contents
 for Module; do
@@ -61,12 +72,12 @@ for Module; do
                 */) # a directory
                     # TODO is it better if we make rules for individual files under $src/?
                     echo "	mkdir -p \$@"
-                    echo "	cp -rf \$</. \$@/"
+                    echo "	$(stageDir "\$</." "\$@/")"
                     echo "# XXX always copying since Make doesn't know if files are changed inside a directory or not"
                     echo ".PHONY: \$(STAGEDIR)/$dst"
                     ;;
                 *) # a file
-                    echo "	cp -f \$< \$@"
+                    echo "	$(stageFile "\$<" "\$@")"
                     ;;
             esac
             # record in stage contents
