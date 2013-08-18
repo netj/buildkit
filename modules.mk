@@ -158,9 +158,14 @@ clean-depends:
 	@rm -f $(DEPENDS)
 	### BuildKit: cleaned dependencies
 
+clean-packages:
+	rm -f $(PACKAGENAME)-*.{sh,tar.gz}
+
 gitclean:
 	@git clean -xdf
 	### BuildKit: cleaned with git
+
+.PHONY: cleaner clean-depends clean-packages gitclean
 
 # generate some useful files to be used with BuildKit
 .gitignore .lvimrc:
