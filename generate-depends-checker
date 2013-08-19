@@ -47,7 +47,7 @@ trap 'rm -rf "$tmp"' EXIT
             set -- *.{commands,paths,test.sh}
         fi
         ls "$@" 2>/dev/null |
-        sed -E 's/\.(commands|paths|test\.sh)$//'
+        sed 's/\.commands$//; s/\.paths$//; s/\.test\.sh$//;'
     }
     enumerate | sort -u |
     while read -r dep; do
