@@ -26,7 +26,7 @@ esc() {
 # include a shell (bash) script
 embed-script() {
     local sh=$1
-    echo "  bash -c '"; esc <"$sh"; echo "' '$(esc "$sh")'"
+    echo "  bash -c '"; esc <"$sh"; echo "' \"\$DEPENDSDIR\"/'$(esc "$(basename "$sh")")'"
 }
 
 
