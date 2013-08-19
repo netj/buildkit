@@ -131,7 +131,7 @@ while read -r dep; do
         embed-script "$t"
         echo '}'
         checker-with-found-or-error \
-            "some requirements not met for dependency $dep"
+            "unmet requirement for dependency $dep"
     fi
 
     echo "msg 'found dependency $(esc "$dep")'"
