@@ -9,8 +9,10 @@
 /@@PACKAGENAME@@-*.sh
 
 /@@DEPENDSDIR@@
+!/@@DEPENDSDIR@@/*.depends
 !/@@DEPENDSDIR@@/*.commands
 !/@@DEPENDSDIR@@/*.paths
+!/@@DEPENDSDIR@@/*.test.sh
 !/@@DEPENDSDIR@@/*.sh
 !/@@DEPENDSDIR@@/*.txt
 

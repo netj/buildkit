@@ -2,7 +2,7 @@
 # check-build-depends -- Check build dependencies
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2013-05-28
-set -eu
+set -eu -o pipefail
 
 depends=${1:-$PWD/.depends}
 

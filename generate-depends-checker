@@ -30,6 +30,43 @@ embed-script() {
 }
 
 
+# temporary space for ordering by dependency among dependencies
+tmp=$(mktemp -d ${TMPDIR:-/tmp}/generate-depends-checker.XXXXXX)
+trap 'rm -rf "$tmp"' EXIT
+
+# enumerate dependencies from the specifications in the correct order
+(
+    cd "$DEPENDSDIR"
+    enumerate() {
+        if [ $# -gt 0 ]; then
+            local files=() name=
+            for name; do files+=("$name".{commands,paths,test.sh}); done
+            set -- "${files[@]}"
+        else
+            set -- *.{commands,paths,test.sh}
+        fi
+        ls "$@" 2>/dev/null |
+        sed -E 's/\.(commands|paths|test\.sh)$//'
+    }
+    enumerate | sort -u |
+    while read -r dep; do
+        without-comments "$dep".depends |
+        while read -r depdep; do
+            if ! [ $(enumerate "$depdep" | wc -l) -gt 0 ]; then
+                echo >&2 "$DEPENDSDIR/${dep}.depends: ${depdep}: No such dependency definition"
+                touch $tmp/error
+                break
+            fi
+            echo "$depdep" "$dep"
+        done
+        ! [ -e $tmp/error ] || break
+        echo "$dep" '*'
+    done |
+    tsort | grep -v '^*$' >$tmp/order
+)
+! [ -e $tmp/error ] || exit 4
+
+
 # prologue
 echo '#!/usr/bin/env bash
 set -eu
@@ -37,15 +74,6 @@ set -eu
 msg() { echo "'"$Prefix"'$*"; }
 error() { msg >&2 "$@"; false; }
 '
-
-# enumerate dependencies from the specifications
-(
-    cd "$DEPENDSDIR"
-    for f in *.{commands,paths,test.sh}; do
-        [ -e "$f" ] || continue
-        echo "${f%.*}"
-    done
-) | sort -u | {
 
 # dependency checker for each dependency declaration
 while read -r dep; do
@@ -109,6 +137,4 @@ while read -r dep; do
     fi
 
     echo "msg 'found dependency $(esc "$dep")'"
-done
-
-}
+done <$tmp/order
