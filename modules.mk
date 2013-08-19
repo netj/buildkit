@@ -16,6 +16,7 @@ BUILDDIR?=.build
 PREFIX?=/usr/local
 PACKAGENAME?=$(shell basename $(SRCROOT))
 PACKAGEVERSION?=$(shell $(BUILDKIT)/determine-package-version)
+PACKAGEVERSIONSUFFIX?=
 MODULES?=
 export PREFIX
 
@@ -111,7 +112,7 @@ endif
 
 ifdef PACKAGEEXECUTES
 # use pojang for creating an executable package
-PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).sh
+PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION)$(PACKAGEVERSIONSUFFIX).sh
 package: $(PACKAGE)
 $(PACKAGE): polish
 	@\
@@ -129,7 +130,7 @@ install: $(PACKAGE)
 	@install $< $(PREFIX)/bin/$(PACKAGENAME)
 else
 # otherwise, just create an ordinary tarball
-PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION).tar.gz
+PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION)$(PACKAGEVERSIONSUFFIX).tar.gz
 package: $(PACKAGE)
 $(PACKAGE): polish
 	@tar czf $@ -C $(STAGEDIR) .
@@ -172,7 +173,6 @@ gitclean:
 	cd $(shell $(BUILDKIT)/relpath $(SRCROOT) $(BUILDKIT)/template) && { \
 	    echo @@dot@@=.; \
 	    echo @@PACKAGENAME@@=$(PACKAGENAME); \
-	    echo @@PACKAGEVERSION@@=$(PACKAGEVERSION); \
 	    echo @@DEPENDSDIR@@=$(DEPENDSDIR); \
 	    echo @@BUILDDIR@@=$(BUILDDIR); \
 	    echo @@STAGEDIR@@=$(STAGEDIR); \
