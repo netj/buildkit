@@ -7,7 +7,10 @@ set -eu
 for Module; do
     l="$BUILDDIR/timestamp/$Module".lastmodified
     d="$(dirname "$l")"
-    mf="$(most-recently-modified-files "$Module" | head -1)"
+    mf="$(most-recently-modified-files "$Module" \
+        ! \( -path '*/.build' -prune \) \
+        ! \( -path '*/.git'   -prune \) \
+        | head -1)"
     mkdir -p "$d"
     relpath=$(relpath "$d" "$mf")
     ln -sfn "$relpath" "$l"

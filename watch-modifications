@@ -107,6 +107,7 @@ watchmedo shell-command --recursive \
         case $abspath in
             "$BUILDKIT"@(|/*)) continue ;;
             */.build|*/.build/*) continue ;;
+            */.git|*/.git/*) continue ;;
             "$SRCROOT") path=. ;;
             *) path=${abspath#$SRCROOT/} ;;
         esac
