@@ -9,7 +9,8 @@ set -eu
 DEPENDSDIR=$1
 [ -d "$DEPENDSDIR" ] || exit 1
 
-Prefix=${2:-}
+ErrorPrefix=${2:-}
+Prefix=${3:-}
 
 # escape for enclosing in shell's single quote literal
 esc() {
@@ -70,7 +71,7 @@ echo '#!/usr/bin/env bash
 set -eu
 : ${DEPENDSDIR:?path to the directory for keeping dependencies is required}
 msg() { echo "'"$Prefix"'$*"; }
-error() { msg >&2 "$@"; false; }
+error() { echo >&2 "'"$ErrorPrefix"'$*"; false; }
 '
 
 # dependency checker for each dependency declaration
