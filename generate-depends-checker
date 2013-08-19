@@ -55,11 +55,9 @@ trap 'rm -rf "$tmp"' EXIT
             if ! [ $(enumerate "$depdep" | wc -l) -gt 0 ]; then
                 echo >&2 "$DEPENDSDIR/${dep}.depends: ${depdep}: No such dependency definition"
                 touch $tmp/error
-                break
             fi
             echo "$depdep" "$dep"
         done
-        ! [ -e $tmp/error ] || break
         echo "$dep" '*'
     done |
     tsort | grep -v '^*$' >$tmp/order
