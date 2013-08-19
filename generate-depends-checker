@@ -95,7 +95,7 @@ while read -r dep; do
     # show instruction if exists
     desc=$(dep txt)
     if [ -r "$desc" ]; then
-        echo -n "   echo '"; esc <"$desc"; echo "'"
+        echo -n "   echo >&2 '"; esc <"$desc"; echo "'"
     fi
     echo "  false"
     echo '}'
