@@ -22,7 +22,7 @@ export PREFIX
 
 
 .PHONY: all depends build index stage polish test clean package install
-DEPENDS := $(BUILDDIR)/depends.allfound
+DEPENDS := $(BUILDDIR)/depends.found-all
 STAGED  := $(BUILDDIR)/staged
 
 all: test
@@ -91,7 +91,7 @@ ifndef DEPENDSDIR
 $(DEPENDS):
 	@touch $@
 else
-PATH:=$(shell cd $(DEPENDSDIR) && pwd)/bin:$(PATH)
+PATH:=$(shell cd $(DEPENDSDIR) && pwd)/.all/bin:$(PATH)
 build: $(DEPENDS)
 depends:
 	@rm -f $(DEPENDS)

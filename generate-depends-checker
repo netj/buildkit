@@ -88,7 +88,10 @@ while read -r dep; do
     sh=$(dep sh)
     if [ -r "$sh" ]; then
         echo "  msg 'preparing dependency $dep'"
+        preparedFlagEsc=$(esc "$DEPENDSDIR/$dep/.prepared")
+        echo "  rm -f '$preparedFlagEsc'"
         embed-script "$sh"
+        echo "  touch '$preparedFlagEsc'"
         echo '  return $?'
     fi
     # TODO brew/apt-get/yum install based on uname
