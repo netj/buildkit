@@ -110,15 +110,23 @@ $(DEPENDS): $(BUILDKIT)/check-depends $(BUILDKIT)/generate-depends-checker \
 # 		...
 endif
 
+
+PACKAGE = $(PACKAGENAME)-$(PACKAGEVERSION)$(PACKAGEVERSIONSUFFIX)$(PACKAGEEXTENSION)
+PACKAGE_LATEST = $(PACKAGENAME)-LATEST$(PACKAGEVERSIONSUFFIX)$(PACKAGEEXTENSION)
+define DO_SYMLINK_PACKAGE_LATEST
+	[ ! -L $(PACKAGE_LATEST) -a -e $(PACKAGE_LATEST) ] || ln -sfn $@ $(PACKAGE_LATEST)
+endef
+
 ifdef PACKAGEEXECUTES
+PACKAGEEXTENSION := .sh
 # use pojang for creating an executable package
-PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION)$(PACKAGEVERSIONSUFFIX).sh
 package: $(PACKAGE)
 $(PACKAGE): polish
 	@\
 	    PACKAGENAME=$(PACKAGENAME) \
 	    pojang $@ $(STAGEDIR) $(PACKAGEEXECUTES) . \
 	    #
+	@$(DO_SYMLINK_PACKAGE_LATEST)
 	### BuildKit: packaged as $(PACKAGE)
 
 # we want to do create the package everytime
@@ -130,10 +138,11 @@ install: $(PACKAGE)
 	@install $< $(PREFIX)/bin/$(PACKAGENAME)
 else
 # otherwise, just create an ordinary tarball
-PACKAGE := $(PACKAGENAME)-$(PACKAGEVERSION)$(PACKAGEVERSIONSUFFIX).tar.gz
+PACKAGEEXTENSION := .tar.gz
 package: $(PACKAGE)
 $(PACKAGE): polish
 	@tar czf $@ -C $(STAGEDIR) .
+	@$(DO_SYMLINK_PACKAGE_LATEST)
 	### BuildKit: packaged as $(PACKAGE)
 
 install: $(PACKAGE)
