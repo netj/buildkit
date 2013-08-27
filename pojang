@@ -89,6 +89,7 @@ d=/tmp/$PACKAGENAME-\$USER/$PACKAGEID
     [ -e \$o ] || { echo "\$0: package corrupt" >&2; exit 255; }
     rm -f \$o; touch \$d.o
 }
+POJANG_ORIGINAL_COMMAND=\$0 \\
 exec \$d/$Entry "\$@"
 DRV
 echo "# end of pojang driver (https://github.com/netj/BuildKit), content follows:"
@@ -100,5 +101,3 @@ tar czf - "$@" $EndMarker
 )
 } >"$Product"
 chmod +x "$Product"
-
-# TODO save $0 as POJANG_ORIGINAL_COMMAND
