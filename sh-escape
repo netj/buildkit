@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# sh-escape -- Escape given command-line arguments or standard input as a
+#              string that is safe to use as input for shells, e.g., sh -c ...
+# 
+# sh-escape command makes sure that:
+# > eval "echo $(sh-escape "$variable")"
+# is equivalent to:
+# > echo "$variable"
+# no matter what special characters may exist in $variable.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-24
+set -eu
+shopt -s extglob
+
+if [ $# -gt 0 ]; then
+    # escape command-line arguments
+    first=
+    for arg; do
+        case $arg in
+            +([A-Za-z0-9,.:/=+_-]))
+                echo -n "${first:+ }$arg"
+                ;;
+            *)
+                echo -n "${first:+ }'"${arg//\'/\'\\\'\'}"'"
+                ;;
+        esac
+        first=no
+    done
+    echo
+else # escape stdin
+    echo -n \'
+    sed "s/'/'\\''/g"
+    echo \'
+fi

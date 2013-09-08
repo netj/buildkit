@@ -7,8 +7,9 @@ echo '#!/bin/sh'
 echo 'for f; do'
 echo '  case $f in'
 while read -r Module; do
-    echo "    '$Module'/*)"
-    echo "      echo '$Module'"
+    ModuleEscaped=$(sh-escape "$Module")
+    echo "    $ModuleEscaped/*)"
+    echo "      echo $ModuleEscaped"
     echo '      ;;'
 done
 echo '    *)'

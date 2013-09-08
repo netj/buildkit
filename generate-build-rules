@@ -32,7 +32,8 @@ for Module; do
         fi
         # build rule
         echo "\$(BUILDDIR)/$prefixBuilt$Module$suffixBuilt: \$(BUILDDIR)/$prefixModified$Module$suffixModified \$(DEPENDS)"
-        echo "	cd '$Module' && ./.module.build '$Module'"
+        ModuleEscaped=$(sh-escape "$Module")
+        echo "	cd $ModuleEscaped && ./.module.build $ModuleEscaped"
         echo "	@mkdir -p '\$(@D)' && touch '\$@'"
     else
         echo '#  (no executable .module.build)'
