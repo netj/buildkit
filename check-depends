@@ -5,6 +5,11 @@
 set -eu -o pipefail
 
 depends=${1:-$PWD/.depends}
+prefix=${2:-$PWD/.depends/.all}
+prefix=$(mkdir -p "$prefix"/{bin,lib}; cd "$prefix"; pwd -P)
 
 generate-depends-checker "$depends" "### BuildKit: " |
-DEPENDSDIR=$depends  bash -eu
+tee $BUILDDIR/check-depends.sh |
+DEPENDSDIR=$depends \
+DEPENDS_PREFIX=$prefix \
+    bash -eu

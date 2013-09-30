@@ -98,8 +98,7 @@ depends:
 	@$(MAKE) $(DEPENDS)
 $(DEPENDS): $(BUILDKIT)/check-depends $(BUILDKIT)/generate-depends-checker \
     $(wildcard $(DEPENDSDIR)/*.commands $(DEPENDSDIR)/*.paths $(DEPENDSDIR)/*.test.sh)
-	@mkdir -p $(DEPENDSDIR)/bin
-	@$< $(DEPENDSDIR)
+	@BUILDDIR=$(BUILDDIR)  $< $(DEPENDSDIR) $(DEPENDSDIR)/.all
 	@touch $@
 # XXX To add more "depends" tasks, so they run before all the tasks "build"
 # depends on, you need to add the dependency edge to yours from $(DEPENDS),

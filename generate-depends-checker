@@ -115,7 +115,7 @@ while read -r dep; do
     without-comments "$(dep paths)" |
     while read -r path; do
         echo "# check if path $path is available"
-        echo 'found() { (cd "$DEPENDSDIR" && [ -e '"$(sh-escape "$path")"' ]); }'
+        echo 'found() { (cd "$DEPENDS_PREFIX" && [ -e '"$(sh-escape "$path")"' ]); }'
         checker-with-found-or-error \
             "$path: path not found for dependency $dep"
     done
