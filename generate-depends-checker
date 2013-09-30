@@ -57,7 +57,8 @@ trap 'rm -rf "$tmp"' EXIT
 # prologue
 echo '#!/usr/bin/env bash
 set -eu
-: ${DEPENDSDIR:?path to the directory for keeping dependencies is required}
+: ${DEPENDSDIR:?path to the directory that keeps dependency information is required}
+: ${DEPENDS_PREFIX:?path to the directory that holds installed dependencies is required}
 msg() { echo "'"$Prefix"'$*"; }
 error() { echo >&2 "'"$ErrorPrefix"'$*"; false; }
 '
@@ -72,20 +73,20 @@ while read -r dep; do
 
     # define how to prepare the dependency when not found
     echo 'prepare-dependency() {'
+    echo '  local c=1'
     # run shell script if exists
     sh=$(dep sh)
     if [ -r "$sh" ]; then
         echo "  msg 'preparing dependency $dep'"
         depDirEsc=$(sh-escape "$DEPENDSDIR/$dep")
-        echo '  ('
+        echo '  ( set -eu'
         echo "  mkdir -p $depDirEsc"
         echo "  cd $depDirEsc"
         echo "  rm -f .prepared"
         embed-script "$sh"
-        echo '  c=$?'
         echo "  touch .prepared"
-        echo '  exit $c'
-        echo '  )'
+        echo '  ); c=$?'
+        echo '  [ $c -ne 0 ] || return 0'
     fi
     # TODO brew/apt-get/yum install based on uname
     # show instruction if exists
@@ -93,7 +94,7 @@ while read -r dep; do
     if [ -r "$desc" ]; then
         echo -n "   echo >&2 "; sh-escape <"$desc"
     fi
-    echo "  false"
+    echo '  return $c'
     echo '}'
 
     checker-with-found-or-error() {
