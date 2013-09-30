@@ -6,6 +6,9 @@ set -eu -o pipefail
 
 depends=${1:-$PWD/.depends}
 prefix=${2:-$PWD/.depends/.all}
+
+# make paths canonical
+depends=$(cd "$depends"; pwd -P)
 prefix=$(mkdir -p "$prefix"/{bin,lib}; cd "$prefix"; pwd -P)
 
 generate-depends-checker "$depends" "### BuildKit: " |

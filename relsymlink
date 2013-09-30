@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# relsymlink -- Create symlink using relative path
+# Usage: relsymlink TARGET_PATH SYMLINK
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-09-30
+set -eu
+
+Target=$1; shift
+Symlink=$1
+
+exec ln -sfn "$(relpath "$Symlink" "$Target")" "$Symlink"
