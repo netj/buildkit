@@ -8,7 +8,7 @@
 /@@PACKAGENAME@@-*.tar.gz
 /@@PACKAGENAME@@-*.sh
 
-/@@DEPENDSDIR@@
+/@@DEPENDSDIR@@/*
 !/@@DEPENDSDIR@@/*.depends
 !/@@DEPENDSDIR@@/*.commands
 !/@@DEPENDSDIR@@/*.paths
