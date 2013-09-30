@@ -82,9 +82,11 @@ while read -r dep; do
         echo '  ( set -eu'
         echo "  mkdir -p $depDirEsc"
         echo "  cd $depDirEsc"
-        echo "  rm -f .prepared"
+        echo '  rm -f .prepared'
         embed-script "$sh"
-        echo "  touch .prepared"
+        echo '  c=$?'
+        echo '  [ $c -ne 0 ] || touch .prepared'
+        echo '  exit $c'
         echo '  ); c=$?'
         echo '  [ $c -ne 0 ] || return 0'
     fi
