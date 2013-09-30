@@ -15,7 +15,7 @@ Prefix=${3:-}
 # include a shell (bash) script
 embed-script() {
     local sh=$1
-    echo "  bash -c '"; sh-escape <"$sh"; echo "' \"\$DEPENDSDIR\"/'$(sh-escape "$(basename "$sh")")'"
+    echo "  bash -c $(sh-escape <"$sh") \"\$DEPENDSDIR\"/$(sh-escape "$(basename "$sh")")"
 }
 
 
@@ -76,17 +76,22 @@ while read -r dep; do
     sh=$(dep sh)
     if [ -r "$sh" ]; then
         echo "  msg 'preparing dependency $dep'"
-        preparedFlagEsc=$(sh-escape "$DEPENDSDIR/$dep/.prepared")
-        echo "  rm -f '$preparedFlagEsc'"
+        depDirEsc=$(sh-escape "$DEPENDSDIR/$dep")
+        echo '  ('
+        echo "  mkdir -p $depDirEsc"
+        echo "  cd $depDirEsc"
+        echo "  rm -f .prepared"
         embed-script "$sh"
-        echo "  touch '$preparedFlagEsc'"
-        echo '  return $?'
+        echo '  c=$?'
+        echo "  touch .prepared"
+        echo '  exit $c'
+        echo '  )'
     fi
     # TODO brew/apt-get/yum install based on uname
     # show instruction if exists
     desc=$(dep txt)
     if [ -r "$desc" ]; then
-        echo -n "   echo >&2 '"; sh-escape <"$desc"; echo "'"
+        echo -n "   echo >&2 "; sh-escape <"$desc"
     fi
     echo "  false"
     echo '}'
@@ -94,14 +99,14 @@ while read -r dep; do
     checker-with-found-or-error() {
         local error=$1
         echo "found || prepare-dependency && found ||"
-        echo "  error '$(sh-escape "$error")'"
+        echo "  error $(sh-escape "$error")"
     }
 
     # check if all required commands are available
     without-comments "$(dep commands)" |
     while read -r cmd; do
         echo "# check if command $cmd is available"
-        echo "found() { type '$(sh-escape "$cmd")' >/dev/null 2>&1; }"
+        echo "found() { type $(sh-escape "$cmd") >/dev/null 2>&1; }"
         checker-with-found-or-error \
             "$cmd: command not found for dependency $dep"
     done
@@ -110,7 +115,7 @@ while read -r dep; do
     without-comments "$(dep paths)" |
     while read -r path; do
         echo "# check if path $path is available"
-        echo 'found() { (cd "$DEPENDSDIR" && [ -e '"'$(sh-escape "$path")'"' ]); }'
+        echo 'found() { (cd "$DEPENDSDIR" && [ -e '"$(sh-escape "$path")"' ]); }'
         checker-with-found-or-error \
             "$path: path not found for dependency $dep"
     done
@@ -126,5 +131,5 @@ while read -r dep; do
             "unmet requirement for dependency $dep"
     fi
 
-    echo "msg 'found dependency $(sh-escape "$dep")'"
+    echo "msg 'found dependency '$(sh-escape "$dep")"
 done <$tmp/order
