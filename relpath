@@ -23,5 +23,5 @@ if (@ARGV < 1) {
 }
 
 for my $p (@ARGV) {
-    printf "%s\n", File::Spec->abs2rel($p, $base);
+    printf "%s\n", File::Spec->abs2rel(File::Spec->rel2abs($p), $base);
 }
