@@ -1,0 +1,3 @@
+.build/bundled                  depends/
+.build/runtime                  depends/
+check-runtime-depends-once      depends/

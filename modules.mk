@@ -185,3 +185,21 @@ gitclean:
 	    echo @@BUILDDIR@@=$(BUILDDIR); \
 	    echo @@STAGEDIR@@=$(STAGEDIR); \
 	} | customize $(shell $(BUILDKIT)/relpath $(BUILDKIT)/template $(SRCROOT)) $(@:.%=@@dot@@%)
+
+depends/.module.install:
+	mkdir -p $(@D)/{bundled,runtime}
+	relsymlink $(BUILDKIT)/depends/module.install              $@
+	relsymlink $(BUILDKIT)/depends/module.build                $(@D)/.module.build
+	relsymlink $(BUILDKIT)/depends/check-runtime-depends-once  $(@D)/
+	cp -f      $(BUILDKIT)/depends/bundle.conf                 $(@D)/
+	@echo
+	@echo '# Created `depends'\'' module that can bundle and/or check runtime dependencies.'
+	@echo '# Add dependency definitions under depends/bundled/ and depends/runtime/.'
+	@echo
+	@echo '# Bundled dependencies will be installed at @prefix@/depends/bundled/'
+	@echo '#  e.g., you can add @prefix@/depends/bundled/.all/bin to your PATH.'
+	@echo '# Runtime dependencies can be easily checked by calling:'
+	@echo '#     @prefix@/depends/check-runtime-depends-once'
+	@echo '# and add @prefix@/depends/runtime/.all/bin to your PATH'
+	@echo '# if you install anything on the fly.'
+
