@@ -8,7 +8,11 @@ set -eu
 # Making .module.install executable will let BuildKit ignore that module.
 # However, we should take care not to take over modules of nested source trees
 # using BuildKit.
-find * -name .module.install ! -perm +0111 -print \
-    -o -type d \( -name .git -o -execdir [ -d {}/buildkit ] \; \) -prune -false \
+find * -name .module.install ! \( ! -type l -perm +0111 \
+                               -o -type l -exec [ -x {} ] \; \
+                               \) -print \
+    -o -type d \( -name .git \
+               -o -execdir [ -d {}/buildkit ] \; \
+               \) -prune -false \
     2>/dev/null |
 sed 's:/\.module\.install$::'
