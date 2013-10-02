@@ -4,6 +4,16 @@
 # Created: 2010-07-24
 set -eu
 
+# NOTE that GNU find's -execdir disallows any empty or relative path in $PATH.
+# For correctness and security concerns, it's safe to sanitize PATH anyway.
+case $PATH in
+    [^/]*|*:[^/]*|*:)
+        PATH=$(tr : '\n' <<<"$PATH" |
+               sed -e '\:^/:{ p; d; }; s:^:'"$PWD"'/:' |
+               tr '\n' :)
+        PATH=${PATH%:}
+esac
+
 # Directories having .module.install are considered as BuildKit modules.
 # Making .module.install executable will let BuildKit ignore that module.
 # However, we should take care not to take over modules of nested source trees
