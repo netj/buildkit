@@ -6,7 +6,7 @@ mkdir -p .build
 cd .build
 
 # compile a runtime dependency checker
-mkdir -p runtime
+mkdir -p ../runtime runtime
 rsync -rlH ../runtime/ --exclude=*.{commands,paths,test.sh,sh,txt} runtime/ --delete
 generate-depends-checker ../runtime "Missing dependency: " "3X " >runtime/.check
 chmod +x runtime/.check
@@ -16,7 +16,7 @@ bundledir=bundled
 prepdir=bundled.prep
 prepdirpath="$(pwd -P)"/"$prepdir"
 rm -rf "$bundledir"
-mkdir -p "$bundledir" "$prepdir"/.all
+mkdir -p ../bundled "$bundledir" "$prepdir"/.all
 rsync -rlH ../bundled/ --exclude=/*.{commands,paths,{{test,bundle}.,}sh} "$prepdir"/ #--delete
 without-comments ../bundle.conf |
 while read -r dep; do
