@@ -17,7 +17,7 @@ prepdir=bundled.prep
 prepdirpath="$(pwd -P)"/"$prepdir"
 rm -rf "$bundledir"
 mkdir -p "$bundledir" "$prepdir"/.all
-rsync -rlH ../bundled/ --exclude=/*.{commands,paths,{test.,}sh} "$prepdir"/ #--delete
+rsync -rlH ../bundled/ --exclude=/*.{commands,paths,{{test,bundle}.,}sh} "$prepdir"/ #--delete
 without-comments ../bundle.conf |
 while read -r dep; do
     echo "# Preparing to bundle dependency $dep"
@@ -27,7 +27,6 @@ while read -r dep; do
     if [ -L ../bundled/"$dep".sh ]; then
         # find out where the prep script comes from
         origin="$(dirname "$(readlink ../bundled/"$dep".sh)")/$dep"
-        origin=../bundled/"$(relpath ../bundled/"$dep".sh "$origin")"
         if [ -e "$origin" ]; then
             # make sure it's clear to place a symlink
             ! [ -e "$prepared" ] || rm -rf "$prepared"
