@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # relsymlink -- Create symlink using relative path
 # Usage: relsymlink TARGET_PATH SYMLINK
+# 
+# SYMLINK must end with a slash (/) to place a symlink with the same basename
+# as the TARGET_PATH under the directory SYMLINK/.
 #
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2013-09-30
@@ -9,4 +12,8 @@ set -eu
 Target=$1; shift
 Symlink=$1
 
-exec ln -sfn "$(relpath "$Symlink" "$Target")" "$Symlink"
+if [ -d "$Symlink" -a ! -L "$Symlink" ]; then
+    Symlink="${Symlink%/}/"
+fi
+
+exec ln -sfn "$(relpath "${Symlink%/*}" "$Target")" "$Symlink"
