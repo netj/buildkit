@@ -12,6 +12,8 @@ export SHELL PATH
 STAGEDIR?=@prefix@
 BUILDDIR?=.build
 #DEPENDSDIR?=.depends
+RUNTIMEDEPENDSDIR?=depends
+export RUNTIMEDEPENDSDIR
 
 PREFIX?=/usr/local
 PACKAGENAME?=$(shell basename $(SRCROOT))
@@ -19,7 +21,6 @@ PACKAGEVERSION?=$(shell $(BUILDKIT)/determine-package-version)
 PACKAGEVERSIONSUFFIX?=
 MODULES?=
 export PREFIX
-
 
 .PHONY: all depends build index stage polish test clean package install
 DEPENDS := $(BUILDDIR)/depends.found-all
@@ -187,19 +188,23 @@ gitclean:
 	} | customize $(shell $(BUILDKIT)/relpath $(BUILDKIT)/template $(SRCROOT)) $(@:.%=@@dot@@%)
 
 depends/.module.install:
-	mkdir -p $(@D)/{bundled,runtime}
-	relsymlink $(BUILDKIT)/depends/module.install              $@
-	relsymlink $(BUILDKIT)/depends/module.build                $(@D)/.module.build
-	relsymlink $(BUILDKIT)/depends/check-runtime-depends-once  $(@D)/
-	cp -f      $(BUILDKIT)/depends/bundle.conf                 $(@D)/
-	@echo
-	@echo '# Created `depends'\'' module that can bundle and/or check runtime dependencies.'
-	@echo '# Add dependency definitions under depends/bundled/ and depends/runtime/.'
-	@echo
-	@echo '# Bundled dependencies will be installed at @prefix@/depends/bundled/'
-	@echo '#  e.g., you can add @prefix@/depends/bundled/.all/bin to your PATH.'
-	@echo '# Runtime dependencies can be easily checked by calling:'
-	@echo '#     @prefix@/depends/check-runtime-depends-once'
-	@echo '# and add @prefix@/depends/runtime/.all/bin to your PATH'
-	@echo '# if you install anything on the fly.'
+	@mkdir -p $(@D)/{bundled,runtime}
+	@relsymlink $(BUILDKIT)/depends/module.install              $@
+	@relsymlink $(BUILDKIT)/depends/module.build                $(@D)/.module.build
+	@relsymlink $(BUILDKIT)/depends/check-runtime-depends-once  $(@D)/
+	@cp -f      $(BUILDKIT)/depends/bundle.conf                 $(@D)/
+	
+	# Created `depends' module that can bundle and/or check runtime dependencies.
+	# Add dependency definitions under depends/bundled/ and depends/runtime/, and
+	# define a RUNTIMEDEPENDSDIR variable in your Makefile for specifying the path
+	# within @prefix@ for your dependencies.
+	#
+	# Bundled dependencies will be installed at @prefix@/$$RUNTIMEDEPENDSDIR/bundled/
+	# so add @prefix@/$$RUNTIMEDEPENDSDIR/bundled/.all/bin to your PATH at runtime to
+	# use bundled commands.
+	#
+	# Runtime dependencies can be easily checked by calling:
+	#     @prefix@/$$RUNTIMEDEPENDSDIR/check-runtime-depends-once
+	# Add @prefix@/$$RUNTIMEDEPENDSDIR/runtime/.all/bin to your PATH at runtime if
+	# you install anything on the fly.
 
