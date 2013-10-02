@@ -23,17 +23,20 @@ while read -r dep; do
     echo "# Preparing to bundle dependency $dep"
     prepared="$prepdir/$dep"
     relsymlink ../bundled/"$dep".sh "$prepared".sh
-    # reuse prepared dependency if available
-    if [ -L ../bundled/"$dep".sh ]; then
-        # find out where the prep script comes from
-        origin="$(dirname "$(readlink ../bundled/"$dep".sh)")/$dep"
-        if [ -e "$origin" ]; then
-            # make sure it's clear to place a symlink
-            ! [ -e "$prepared" ] || rm -rf "$prepared"
-            # point to the originally prepared dependency directory
-            relsymlink "$origin" "$prepared"
-        fi
-    fi
+    ## XXX sharing build deps with bundled runtime deps may break since
+    ##     $DEPENDS_PREFIX isn't handled correctly.  We need to separate
+    ##     build/install of each dependency first.
+    ## reuse prepared dependency if available
+    #if [ -L ../bundled/"$dep".sh ]; then
+    #    # find out where the prep script comes from
+    #    origin="$(dirname "$(readlink ../bundled/"$dep".sh)")/$dep"
+    #    if [ -e "$origin" ]; then
+    #        # make sure it's clear to place a symlink
+    #        ! [ -e "$prepared" ] || rm -rf "$prepared"
+    #        # point to the originally prepared dependency directory
+    #        relsymlink "$origin" "$prepared"
+    #    fi
+    #fi
     # remove any dangling symlinks that may remain because of the above reuse
     if [ -L "$prepared" -a ! -e "$prepared" ]; then
         rm -f "$prepared"
