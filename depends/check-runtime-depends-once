@@ -4,7 +4,9 @@
 # Created: 2013-08-17
 set -eu
 
-cd "$(dirname "$0")"/runtime
+Here=$(dirname "$0")
+[ -n "$Here" ] || error "Cannot determine installation location"
+cd "$Here"/runtime
 if ! [ .found -nt .check ]; then
     DEPENDSDIR=$PWD \
     DEPENDS_PREFIX=$PWD/.all \
