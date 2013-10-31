@@ -7,7 +7,7 @@ BUILDKIT?=$(SRCROOT)/buildkit
 SHELL:=$(shell which bash)
 PATH:=$(BUILDKIT):$(PATH)
 CDPATH:=
-export SHELL PATH
+export SHELL PATH SRCROOT BUILDKIT
 
 STAGEDIR?=@prefix@
 BUILDDIR?=.build
