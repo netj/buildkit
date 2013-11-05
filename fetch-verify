@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Fetch file from a remote URL and verify its hash sum
+# Usage:
+# > fetch-verify FILENAME URL [sha1sum=SHA1SUM] [md5sum=MD5SUM]
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-11-05
+set -eu
+
+[ $# -ge 2 ] || {
+    sed -n '2,/^#$/ s/^# //p' <"$0"
+    exit 2
+}
+
+URL=$1; shift
+File=$1; shift
+[ $# -eq 0 ] || declare "$@"
+
+# aliases for checking hash sums
+shasum=${sha1sum:-}
+md5=${md5sum:-}
+
+fileOK() {
+    local fileOK=false
+    if [ -s "$File" ]; then
+        fileOK=true # assume file is okay unless it's known to be corrupt
+        for hashType in sha1sum shasum md5sum md5; do
+            hash=${!hashType:-}
+            [[ -n "$hash" ]] && type "$hashType" &>/dev/null || continue
+            fileOK=false # expected hash exists
+            ! "$hashType" <"$File" | grep -qF "$hash" || exit 0
+        done
+    fi
+    $fileOK
+}
+fileOK || curl --continue-at - --location --output "$File" "$URL" ||
+fileOK || curl --location --output "$File" "$URL" ||
+fileOK || wget --continue --output-document="$File" "$URL" ||
+fileOK || wget --output-document="$File" "$URL" ||
+fileOK

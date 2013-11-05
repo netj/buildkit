@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# Fetch, Configure, Build, and Install given dependency
+# 
+# Assuming this is used in a dependency preparation script,
+# which already runs in a dedicated directory:
+# > export DEPENDS_PREFIX=...
+# > mkdir -p $dep
+# > cd $dep
+# 
+# We can fetch a tarball and extract it by specifying a URL, its check sums and
+# archive type.  With the name of the directory it will produce as DIRNAME,
+# this follows the standard ./configure ... && make && make install build
+# procedure to prepare it as a dependency under $DEPENDSDIR:
+# > fetch-configure-build-install DIRNAME <<END
+# >  url=TARBALL_URL
+# >  ext=TARBALL_EXTENSION
+# >  sha1sum=TARBALL_SHA1SUM
+# >  md5sum=TARBALL_MD5SUM
+# >  custom-fetch() { git clone ... DIRNAME; }
+# >  custom-configure() { ./configure "$@" --with-... --enable-... --disable-...; }
+# >  custom-build() { true; }
+# >  custom-install() { make install-exec; }
+# > END
+# Each step can be customized with custom...() functions, e.g., checkout a
+# source tree from a VCS repo in a custom-fetch.
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-11-05
+set -eu
+
+[ $# -eq 1 ] || {
+    sed -n '2,/^#$/ s/^# //p' <"$0"
+    exit 2
+}
+
+error() { echo >&2 "$@"; false; }
+
+# sanitize input
+DirName=$1; shift
+eval "$(cat)"
+: ${url:?url must be specified}
+[[ -n "${ext:-}" ]] ||
+    case $url in
+        *.tar*       ) ext=.tar${url##*.tar} ;;
+        *.tgz|*.tbz2 ) ext=.t${url##*.t}     ;;
+        *.zip        ) ext=.zip              ;;
+        *)
+            error "Cannot tell archive type from URL: $url"
+    esac
+tarball="$DirName$ext"
+: ${prefix:="$(pwd -P)"/prefix}
+mkdir -p "$prefix"
+
+# fetch source if necessary and prepare for build
+default-fetch() {
+    fetch-verify "$url" "$tarball" \
+        ${sha1sum:+sha1sum=$sha1sum} ${md5sum:+md5sum=$md5sum}
+    case $ext in
+        *.tar.xz)
+            xz -d <"$tarball" | tar xf -
+            ;;
+        *.tar*|*.tgz|*.tbz2)
+            tar xf "$tarball"
+            ;;
+        *.zip)
+            unzip -o "$tarball"
+            ;;
+        *)
+            error "$ext: Unsupported archive type"
+    esac
+}
+if type custom-fetch &>/dev/null; then
+    (custom-fetch "$DirName")
+else
+    default-fetch
+fi
+
+cd ./"$DirName"
+
+# configure
+default-configure() { ./configure --prefix="$prefix" "$@"; }
+if type custom-configure &>/dev/null; then
+    (custom-configure --prefix="$prefix")
+else
+    default-configure
+fi
+
+
+# override make so that users can easily run jobs in parallel
+nproc=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu || echo 1)
+make() { command make -j $nproc "$@"; }
+
+# build
+default-build() { make "$@"; }
+if type custom-build &>/dev/null; then
+    (custom-build $nproc)
+else
+    default-build
+fi
+
+# and install
+default-install() { make install "$@"; }
+if type custom-install &>/dev/null; then
+    (custom-install $nproc "$prefix")
+else
+    default-install
+fi
+
+cd "$prefix"
+
+[ $# -gt 0 ] || set -- bin/ bin/*
+place-depends-symlinks "$@"
