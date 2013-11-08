@@ -4,7 +4,11 @@
 # Created: 2011-04-19
 
 # try Git or use date
-version=`git rev-parse HEAD 2>/dev/null | cut -b -6 || date +0.0.%Y%m%d`
+version=`
+    git describe --tags 2>/dev/null ||
+    git rev-parse HEAD 2>/dev/null | cut -b -6 ||
+    date +0.0.%Y%m%d
+`
 
 # work-in-progress? (is the working tree dirty?)
 [ `git status --porcelain | wc -l` = 0 ] || version+="+WIP"
