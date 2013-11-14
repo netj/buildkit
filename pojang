@@ -84,7 +84,7 @@ cat <<DRV
 # $PACKAGENAME self-extracting executable
 d=/tmp/$PACKAGENAME-\$USER/$PACKAGEID
 [ -e \$d.o ] || {
-    mkdir -p \$d; tail -n +$drvlen "\$0" | gzip -d | tar xpf - -C \$d
+    mkdir -p \$d; tail -n +$drvlen "\$0" | gzip -dq | tar xpf - -C \$d
     o=\$d/$EndMarker
     [ -e \$o ] || { echo "\$0: package corrupt" >&2; exit 255; }
     rm -f \$o; touch \$d.o
