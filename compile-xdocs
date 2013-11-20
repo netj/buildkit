@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# compile-xdocs -- Compile executable documents that embed arbitrary commands
+#                  between <$ and $> into a shell script that generates the
+#                  resulting documents that contain the output of the commands.
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-11-20
+set -eu
+
+[[ $# -gt 0 ]] || set -- /dev/stdin
+
+{
+echo '#!/bin/sh'
+echo 'set -eu'
+for input; do
+    case $input in
+        /dev/stdin) output=             wd=.                   ;;
+        *.in)       output=${input%.in} wd=$(dirname "$input") ;;
+        *)          output="$input".out wd=$(dirname "$input") ;;
+    esac
+    # compile each file into a shell script
+    echo '('
+    echo "cd '"${wd//\'/\'\\\'\'}"'"
+    echo 'set +e'
+    perl <"$input" -Mstrict -e '
+        sub echo {
+            for my $s (@_) {
+                my $t = $s;
+                $t =~ s/'\''/'\''\\'\'''\''/g;
+                printf "printf %%s '\''%s'\''\n", $t;
+            }
+        }
+        my $md = join "", <>;
+        while ($md =~ /(.*?)<\$(.*?)\$>|(.*)$/sg) {
+            if (defined $2) { echo($1); print $2, "\n"; }
+            elsif ($3 ne "") { echo($3); }
+        }
+    '
+    echo -n ')'
+    [[ -z "$output" ]] ||
+        echo " >'"${output//\'/\'\\\'\'}"'"
+done
+} |
+  if [ -n "${DRYRUN:-}" ]; then cat
+elif [ -n "${DEBUG:-}"  ]; then sh -x
+else                            sh
+fi
