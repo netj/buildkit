@@ -23,7 +23,7 @@ GitHubRepo=$(
     git config remote."$GitHubRemote".url |
     sed 's|^.*github\.com[:/]||; s|\.git.*$||'
 )
-echo GitHubRepo=$GitHubRepo
+echo "# Updating GitHub Pages for $GitHubRepo"
 DocumentUpOptions+=(
     repo="$GitHubRepo"
 )
@@ -127,12 +127,7 @@ git checkout gh-pages
 
 mirror-master() {
     local tree=$1
-    for localmd in "$localRepoPath"/"$tree"/*.{md,mkd,markdown}; do
-        [[ -e "$localmd" ]] || continue
-        md=${localmd#$localRepoPath/}
-        mkdir -p "$(dirname "$md")"
-        cp -f "$localmd" "$md"~
-    done
+    echo "## Mirroring $tree from $MasterBranch"
     case $tree in
         .)
             git checkout remotes/origin/"$MasterBranch" -- README.md
@@ -144,9 +139,11 @@ mirror-master() {
             mkdir -p "$tree"
             git checkout -f -- "$tree"
     esac
-    for md in "$tree"/*.{md,mkd,markdown}; do
-        [[ -e "$md"~ ]] || continue
-        mv -f "$md"~ "$md"
+    for localmd in "$localRepoPath"/"$tree"/*.{md,mkd,markdown}; do
+        [[ -e "$localmd" ]] || continue
+        md=${localmd#$localRepoPath/}
+        mkdir -p "$(dirname "$md")"
+        cp -vf "$localmd" "$md"
     done
 }
 
@@ -177,7 +174,8 @@ compile-markdown() {
     for nameValuePair; do curlArgs+=(--data "$nameValuePair"); done
     (  cd "$tree"
     # use DocumentUp to compile GitHub flavored Markdown into HTML
-    curl -X POST "${curlArgs[@]}" http://documentup.com/compiled >"$output"
+    echo "## Compiling $input (with DocumentUp)"
+    curl -# -X POST "${curlArgs[@]}" http://documentup.com/compiled >"$output"
     {
         # polish DocumentUp style
         echo '/<\/head/i'
@@ -197,7 +195,7 @@ compile-markdown() {
                 echo '.'
         esac
         echo 'wq'
-    } | ed "$output" >/dev/null || true
+    } | ed "$output" &>/dev/null || true
     case $tree in
         .)
             ;;
