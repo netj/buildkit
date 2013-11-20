@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# update-gh-pages.sh -- a script to automate GitHub Pages updates
-#                       by mirroring trees in master to gh-pages, and
-#                          compiling Markdown documents using DocumentUp.
+# update-gh-pages -- a script to automate GitHub Pages updates
+#                    by mirroring trees in master to gh-pages, and
+#                       compiling Markdown documents using DocumentUp.
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-11-08
@@ -215,7 +215,7 @@ onexit() {
 
     # first, commit updates to gh-pages repo first and the local repo
     git commit -m "Reflected $MasterBranch updates to gh-pages" || true
-    git push origin "$MasterBranch"
+    git push origin gh-pages
 
     # then, push to GitHub
     cd "$localRepoPath"
