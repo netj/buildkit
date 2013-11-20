@@ -7,31 +7,132 @@
 # Created: 2013-11-08
 set -eu
 
+# default names and paths
 : \
-    ${ghPagesRepoPath:=gh-pages} \
+    ${GHPagesRepoPath:=gh-pages} \
     ${GitHubRemote:=origin} \
     ${MasterBranch:=master} \
+    ${GHPagesLang:=} \
     #
+# default options for DocumentUp
+DocumentUpOptions=()
 
-localRepo=$PWD
+# figure out which GitHub repo this local repo is tied to
+GitHubRepo=$(
+    set -o pipefail
+    git config remote."$GitHubRemote".url |
+    sed 's|^.*github\.com[:/]||; s|\.git.*$||'
+)
+echo GitHubRepo=$GitHubRepo
+DocumentUpOptions+=(
+    repo="$GitHubRepo"
+)
 
 # setup gh-pages branch and clone this to work on gh-pages
-git branch --track gh-pages remotes/"$GitHubRemote"/gh-pages || true
-[ -e "$ghPagesRepoPath"/.git ] || git clone . --branch gh-pages "$ghPagesRepoPath"
-# TODO make sure origin of $ghPagesRepoPath is this repo
-cd "$ghPagesRepoPath"
-
-# default options for DocumentUp
-DocumentUpOptions=(
-)
+localRepoPath=$PWD
+if git rev-parse gh-pages &>/dev/null; then
+    git branch --track gh-pages remotes/"$GitHubRemote"/gh-pages &>/dev/null || true
+    [ -e "$GHPagesRepoPath"/.git ] || git clone . --branch gh-pages "$GHPagesRepoPath"
+    cd "$GHPagesRepoPath"
+else
+    # create a default gh-pages branch in the sub-repo unless a gh-pages branch existed here already
+    [ -e "$GHPagesRepoPath"/.git ] || git clone . --no-checkout "$GHPagesRepoPath"
+    cd "$GHPagesRepoPath"
+    git checkout --orphan gh-pages
+    git rm -rf .
+    git submodule add https://github.com/jeromegn/DocumentUp.git
+    cat >index.html <<-EOF
+	<!DOCTYPE html>
+	<html>
+	  <head>
+	    <script src="DocumentUp/documentup.min.js"></script>
+	    <script>
+	        DocumentUp.document({
+	            afterRender: function(){
+	                    var link = document.createElement("link");
+	                    link.rel = "stylesheet";
+	                    link.href = "styles.css";
+	                    document.head.appendChild(link);
+	                },
+	            name: "${GitHubRepo##*/}",
+	            repo: "$GitHubRepo"
+	        });
+	    </script>
+	    <link rel="stylesheet" href="styles.css">
+	  </head>
+	  <body></body>
+	</html>
+	EOF
+    cat >styles.css <<-EOF
+	/* Fixed nav bar for documents compiled by DocumentUp on desktops */
+	@media screen and (min-width: 1025px) {
+	#nav {
+	    position: fixed;
+	    width: 230px;
+	    top: 0; bottom: 0;
+	    overflow-y: auto;
+	}
+	#content {
+	    margin-left: 260px;
+	    text-align: justify;
+	    hyphens: auto;
+	    -webkit-hyphens: auto;
+	    -moz-hyphens: auto;
+	    padding-bottom: 30%;
+	}
+	#content pre, #content code, #content tt {
+	    hyphens: manual;
+	    -webkit-hyphens: manual;
+	    -moz-hyphens: manual;
+	}
+	#content h2 {
+	    margin-top: 1em;
+	}
+	#content hr {
+	    width: 75%;
+	    margin-top:    7.5em;
+	    margin-bottom: 7.5em;
+	}
+	}
+	EOF
+    cat >update.sh <<-EOF
+	#!/usr/bin/env bash
+	set -eu
+	
+	#DocumentUpOptions+=(
+	#    google_analytics="UA-...."
+	#)
+	
+	#insert-nav-extras() {
+	#    echo '<div class="extra"><a href="http://\${GitHubRepo%/*}.github.io/\${GitHubRepo#*/}">Home</a></div>'
+	#}
+	
+	mirror-master .
+	compile-markdown . name="\${GitHubRepo#*/}"
+	EOF
+    chmod +x update.sh
+    cat >.gitignore <<-EOF
+	/README.md
+	/preview.html
+	EOF
+    git add index.html styles.css update.sh .gitignore
+    git commit -a -m "First pages commit"
+    git push origin gh-pages
+fi
+# make sure url of origin of $GHPagesRepoPath is $localRepoPath
+git config remote.origin.url $localRepoPath
 
 git fetch origin
 git checkout gh-pages
 
 mirror-master() {
     local tree=$1
-    [[ $(git diff "$tree"/README.md | wc -l) -eq 0 ]] ||
-        mv -f "$tree"/README.md "$tree"/README.md~
+    for localmd in "$localRepoPath"/"$tree"/*.{md,mkd,markdown}; do
+        [[ -e "$localmd" ]] || continue
+        md=${localmd#$localRepoPath/}
+        mkdir -p "$(dirname "$md")"
+        cp -f "$localmd" "$md"~
+    done
     case $tree in
         .)
             git checkout remotes/origin/"$MasterBranch" -- README.md
@@ -43,25 +144,36 @@ mirror-master() {
             mkdir -p "$tree"
             git checkout -f -- "$tree"
     esac
-    ! [[ -e "$tree"/README.md~ ]] ||
-        mv -f "$tree"/README.md~ "$tree"/README.md
+    for md in "$tree"/*.{md,mkd,markdown}; do
+        [[ -e "$md"~ ]] || continue
+        mv -f "$md"~ "$md"
+    done
 }
+
+insert-nav-extras() { true; }
 
 compile-markdown() {
     local tree=$1; shift
-    local rootRelPath= output= curlArgs=
+    local rootRelPath= input= output= curlArgs=
     case $tree in
         .)
+            input=README.md
             rootRelPath=.
             output=preview.html
             ;;
         *)
+            if [ -d "$tree" ]; then
+                input=README.md
+            else
+                input=$(basename "$tree")
+                tree=$(dirname "$tree")
+            fi
             rootRelPath=$(perl -MFile::Spec -e 'print File::Spec->abs2rel(@ARGV)' . "$tree")
             output=index.html
     esac
-    curlArgs=(--data-urlencode content@README.md)
+    curlArgs=(--data-urlencode content@"$input")
     # default args
-    set -- "${DocumentUpOptions[@]}" "$@"
+    [ ${#DocumentUpOptions[@]} -eq 0 ] || set -- "${DocumentUpOptions[@]}" "$@"
     for nameValuePair; do curlArgs+=(--data "$nameValuePair"); done
     (  cd "$tree"
     # use DocumentUp to compile GitHub flavored Markdown into HTML
@@ -69,10 +181,11 @@ compile-markdown() {
     {
         # polish DocumentUp style
         echo '/<\/head/i'
-        echo '<link rel="stylesheet" href="'"$rootRelPath"'/3x.css">'
+        echo '<link rel="stylesheet" href="'"$rootRelPath"'/styles.css">'
         echo '.'
-        # English language (for auto-hyphenation, etc.)
-        echo '/<body/s/<body/<body lang="en"/'
+        # language (for auto-hyphenation, etc.)
+        [ -z "${GHPagesLang:-}" ] ||
+            echo '/<body/s/<body/<body lang="'"$GHPagesLang"'"/'
         # and insert an extra link back to home
         case $tree in
             .)
@@ -80,7 +193,7 @@ compile-markdown() {
             *)
                 echo '/<div id="content">/'
                 echo '?</div>?i'
-                echo '<div class="extra"><a href="http://netj.github.io/3x"><i class="icon-beaker"></i> 3X Home</a></div>'
+                insert-nav-extras
                 echo '.'
         esac
         echo 'wq'
@@ -89,7 +202,7 @@ compile-markdown() {
         .)
             ;;
         *)
-            git add README.md "$output"
+            git add "$input" "$output"
     esac
     )
 }
@@ -97,26 +210,27 @@ compile-markdown() {
 # make sure we do some stuff after compiling the site
 onexit() {
     # confirm publishing
+    git status || true
     read -p "commit and publish? "
 
     # first, commit updates to gh-pages repo first and the local repo
     git commit -m "Reflected $MasterBranch updates to gh-pages" || true
-    git push
+    git push origin "$MasterBranch"
 
     # then, push to GitHub
-    cd "$localRepo"
+    cd "$localRepoPath"
     [ $(git log "$GitHubRemote"/"$MasterBranch".."$MasterBranch" \
         README.md | wc -l) -eq 0 ] || git push "$GitHubRemote" "$MasterBranch"
-    git push "$GitHubRemote" gh-pages
+    git push --set-upstream "$GitHubRemote" gh-pages
 }
 trap onexit EXIT
 
 
 # finally, run the update script for this gh-pages site
-if [ -e update.sh ]; then
+if [ -x update.sh ]; then
     . update.sh
 else
     # otherwise, simply create a preview for README
     mirror-master .
-    compile-markdown .
+    compile-markdown . name="${GitHubRepo#*/}"
 fi
