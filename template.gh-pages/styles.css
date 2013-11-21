@@ -1,0 +1,109 @@
+/* Nav bar on top for smaller screens and print media */
+@media screen and (max-width : 1023px), print {
+    #container {
+        width: 100%;
+    }
+
+    #nav {
+        width: 100%;
+        margin-top: 10px;
+        float: none;
+    }
+
+    #nav #sections,
+    #nav #header,
+    #nav .extra {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+
+    #content {
+        -webkit-border-radius: 0;
+        -moz-border-radius: 0;
+        border-radius: 0;
+        border-width: 1px;
+        float: none;
+        margin: 0;
+        width: 100%;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+}
+
+/* Fixed nav bar for documents compiled by DocumentUp on desktops */
+@media screen and (min-width: 1024px) {
+    #nav {
+        position: fixed;
+        width: 230px;
+        top: 0; bottom: 0;
+        overflow-y: auto;
+    }
+    #content {
+        margin-left: 260px;
+    }
+}
+
+/* Justified text with hyphenation and wider margins */
+#content {
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+}
+#content pre,
+#content code,
+#content tt {
+    hyphens: manual;
+    -webkit-hyphens: manual;
+    -moz-hyphens: manual;
+}
+#content h1,
+#content h2,
+#content h3,
+#content h4,
+#content h5,
+#content h6 {
+    text-align: left;
+}
+#content h2 {
+    margin-top: 1em;
+}
+
+/* White spaces */
+#content hr {
+    width: 75%;
+    margin-top:    7.5em;
+    margin-bottom: 7.5em;
+}
+#content { /* Space at the end of page */
+    padding-bottom: 30%;
+}
+@media print {
+    /* better formatting for print */
+    body {
+        margin: 4em 7em;
+        /* width: 40em; margin-left: auto; margin-right: auto; */
+        background: none;
+    }
+    #content {
+        page-break-before: always;
+        border: none;
+    }
+    /* Reduce wasted space at the end of the last page for print */
+    #content { padding-bottom: 1em; }
+    #content pre:last-of-type + hr,
+    #content  ul:last-of-type + hr,
+    #content  ol:last-of-type + hr,
+    #content   p:last-of-type + hr { display: none; }
+}
+
+/* figure and figcaption */
+#content p figure img {
+    float: none;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}

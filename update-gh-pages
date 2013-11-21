@@ -7,6 +7,11 @@
 # Created: 2013-11-08
 set -eu
 
+# figure out where we are and set up PATH
+Here=$(dirname "$0")
+Here=$(cd "$Here"; pwd -P)
+PATH="$Here:$PATH"
+
 # default names and paths
 : \
     ${GHPagesRepoPath:=gh-pages} \
@@ -40,82 +45,14 @@ else
     cd "$GHPagesRepoPath"
     git checkout --orphan gh-pages
     git rm -rf .
-    git submodule add https://github.com/jeromegn/DocumentUp.git
-    cat >index.html <<-EOF
-	<!DOCTYPE html>
-	<html>
-	  <head>
-	    <script src="DocumentUp/documentup.min.js"></script>
-	    <script>
-	        DocumentUp.document({
-	            afterRender: function(){
-	                    var link = document.createElement("link");
-	                    link.rel = "stylesheet";
-	                    link.href = "styles.css";
-	                    document.head.appendChild(link);
-	                },
-	            name: "${GitHubRepo##*/}",
-	            repo: "$GitHubRepo"
-	        });
-	    </script>
-	    <link rel="stylesheet" href="styles.css">
-	  </head>
-	  <body></body>
-	</html>
-	EOF
-    cat >styles.css <<-EOF
-	/* Fixed nav bar for documents compiled by DocumentUp on desktops */
-	@media screen and (min-width: 1025px) {
-	#nav {
-	    position: fixed;
-	    width: 230px;
-	    top: 0; bottom: 0;
-	    overflow-y: auto;
-	}
-	#content {
-	    margin-left: 260px;
-	    text-align: justify;
-	    hyphens: auto;
-	    -webkit-hyphens: auto;
-	    -moz-hyphens: auto;
-	    padding-bottom: 30%;
-	}
-	#content pre, #content code, #content tt {
-	    hyphens: manual;
-	    -webkit-hyphens: manual;
-	    -moz-hyphens: manual;
-	}
-	#content h2 {
-	    margin-top: 1em;
-	}
-	#content hr {
-	    width: 75%;
-	    margin-top:    7.5em;
-	    margin-bottom: 7.5em;
-	}
-	}
-	EOF
-    cat >update.sh <<-EOF
-	#!/usr/bin/env bash
-	set -eu
-	
-	#DocumentUpOptions+=(
-	#    google_analytics="UA-...."
-	#)
-	
-	#insert-nav-extras() {
-	#    echo '<div class="extra"><a href="http://\${GitHubRepo%/*}.github.io/\${GitHubRepo#*/}">Home</a></div>'
-	#}
-	
-	mirror-master .
-	compile-markdown . name="\${GitHubRepo#*/}"
-	EOF
+    customize "$Here"/template.gh-pages <<-SUBST
+	@@GitHubRepo@@=$GitHubRepo
+	@@GitHubRepoName@@=${GitHubRepo##*/}
+	@@dot@@=.
+	SUBST
     chmod +x update.sh
-    cat >.gitignore <<-EOF
-	/README.md
-	/preview.html
-	EOF
-    git add index.html styles.css update.sh .gitignore
+    git add .
+    git submodule add https://github.com/jeromegn/DocumentUp.git
     git commit -a -m "First pages commit"
     git push origin gh-pages
 fi
