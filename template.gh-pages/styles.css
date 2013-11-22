@@ -1,3 +1,7 @@
+/* Use Font-Awesome icons */
+@import url(http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css);
+
+
 /* Nav bar on top for smaller screens and print media */
 @media screen and (max-width : 1023px), print {
     #container {
@@ -41,8 +45,44 @@
         top: 0; bottom: 0;
         overflow-y: auto;
     }
-    #content {
+    #content, nav.footer, #footer {
         margin-left: 260px;
+    }
+    nav.footer {
+        height: 0;
+        visibility: hidden;
+    }
+}
+
+/* footer and footer nav */
+#footer,
+nav.footer {
+    clear: both;
+    font-size: 14px;
+    position: relative;
+    top: 15px;
+    border-top: 3px solid rgba(0,0,0,0.10);
+    padding: 10px 30px 20px 30px;
+}
+#footer .extra,
+nav.footer .extra {
+    display: inline-block;
+}
+#footer .extra:not(:first-of-type),
+nav.footer .extra:not(:first-of-type) {
+    margin-left: 2em;
+}
+#footer a,
+nav.footer a {
+    color: #555;
+    text-decoration: none;
+}
+nav.footer a {
+    font-weight: bold;
+}
+@media print {
+    nav.footer {
+        display: none;
     }
 }
 
@@ -78,8 +118,8 @@
     margin-top:    7.5em;
     margin-bottom: 7.5em;
 }
-#content { /* Space at the end of page */
-    padding-bottom: 30%;
+#container { /* Space at the end of page */
+    padding-bottom: 38.2%;
 }
 @media print {
     /* better formatting for print */

@@ -84,7 +84,9 @@ mirror-master() {
     done
 }
 
-insert-nav-extras() { true; }
+#insert-footer() { echo ...; }
+#insert-nav-extras() { echo ...; }
+#insert-nav-footer() { echo ...; }
 
 compile-markdown() {
     local tree=$1; shift
@@ -114,21 +116,36 @@ compile-markdown() {
     echo "## Compiling $input (with DocumentUp)"
     curl -# -X POST "${curlArgs[@]}" http://documentup.com/compiled >"$output"
     {
-        # polish DocumentUp style
+        # use some scripts and site-specific styles
         echo '/<\/head/i'
+        echo '<script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>'
         echo '<link rel="stylesheet" href="'"$rootRelPath"'/styles.css">'
         echo '.'
         # language (for auto-hyphenation, etc.)
         [ -z "${GHPagesLang:-}" ] ||
             echo '/<body/s/<body/<body lang="'"$GHPagesLang"'"/'
-        # and insert an extra link back to home
+        # and insert some HTML to certain spots
         case $tree in
             .)
                 ;;
             *)
-                echo '/<div id="content">/'
-                echo '?</div>?i'
-                insert-nav-extras
+                if type insert-nav-extras &>/dev/null; then
+                    echo '/<div id="content">/'; echo '?</div>?i'
+                    insert-nav-extras "$tree"
+                    echo '.'
+                fi
+                echo '/<\/body>/'; echo '?</div>?i'
+                if type insert-footer &>/dev/null; then
+                    echo '<footer id="footer">'; insert-footer "$tree"; echo '</footer>'
+                fi
+                echo '<nav class="footer">'
+                if type insert-nav-footer &>/dev/null; then
+                    insert-nav-footer "$tree"
+                    echo '</nav>'
+                else
+                    echo '</nav>'
+                    echo '<script>$("#nav .extra").clone().appendTo("nav.footer");</script>'
+                fi
                 echo '.'
         esac
         echo 'wq'
