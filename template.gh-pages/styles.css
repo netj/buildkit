@@ -1,6 +1,30 @@
 /* Use Font-Awesome icons */
-@import url(http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css);
+@import url(https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css);
 
+
+/* footer and footer nav */
+#footer,
+nav.footer {
+    clear: both;
+    font-size: 14px;
+    position: relative;
+    top: 15px;
+    border-top: 3px solid rgba(0,0,0,0.10);
+    padding: 10px 30px 20px 30px;
+}
+#footer a,
+nav.footer a {
+    color: #555;
+    text-decoration: none;
+}
+nav.footer a {
+    font-weight: bold;
+}
+@media print {
+    nav.footer {
+        display: none;
+    }
+}
 
 /* Nav bar on top for smaller screens and print media */
 @media screen and (max-width : 1023px), print {
@@ -15,10 +39,21 @@
     }
 
     #nav #sections,
-    #nav #header,
-    #nav .extra {
+    #nav #header {
         padding-left: 30px;
         padding-right: 30px;
+    }
+    nav.footer .extra,
+    #nav .extra {
+        display: inline-block;
+        margin-left: 30px;
+        padding: 5px;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+    nav.footer {
+        padding-left: 0px;
+        padding-right: 0px;
     }
 
     #content {
@@ -51,38 +86,6 @@
     nav.footer {
         height: 0;
         visibility: hidden;
-    }
-}
-
-/* footer and footer nav */
-#footer,
-nav.footer {
-    clear: both;
-    font-size: 14px;
-    position: relative;
-    top: 15px;
-    border-top: 3px solid rgba(0,0,0,0.10);
-    padding: 10px 30px 20px 30px;
-}
-#footer .extra,
-nav.footer .extra {
-    display: inline-block;
-}
-#footer .extra:not(:first-of-type),
-nav.footer .extra:not(:first-of-type) {
-    margin-left: 2em;
-}
-#footer a,
-nav.footer a {
-    color: #555;
-    text-decoration: none;
-}
-nav.footer a {
-    font-weight: bold;
-}
-@media print {
-    nav.footer {
-        display: none;
     }
 }
 
