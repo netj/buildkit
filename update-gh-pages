@@ -125,29 +125,24 @@ compile-markdown() {
         [ -z "${GHPagesLang:-}" ] ||
             echo '/<body/s/<body/<body lang="'"$GHPagesLang"'"/'
         # and insert some HTML to certain spots
-        case $tree in
-            .)
-                ;;
-            *)
-                if type insert-nav-extras &>/dev/null; then
-                    echo '/<div id="content">/'; echo '?</div>?i'
-                    insert-nav-extras "$tree"
-                    echo '.'
-                fi
-                echo '/<\/body>/'; echo '?</div>?i'
-                if type insert-footer &>/dev/null; then
-                    echo '<footer id="footer">'; insert-footer "$tree"; echo '</footer>'
-                fi
-                echo '<nav class="footer">'
-                if type insert-nav-footer &>/dev/null; then
-                    insert-nav-footer "$tree"
-                    echo '</nav>'
-                else
-                    echo '</nav>'
-                    echo '<script>$("#nav .extra").clone().appendTo("nav.footer");</script>'
-                fi
-                echo '.'
-        esac
+        if type insert-nav-extras &>/dev/null; then
+            echo '/<div id="content">/'; echo '?</div>?i'
+            insert-nav-extras "$tree"
+            echo '.'
+        fi
+        echo '/<\/body>/'; echo '?</div>?i'
+        if type insert-footer &>/dev/null; then
+            echo '<footer id="footer">'; insert-footer "$tree"; echo '</footer>'
+        fi
+        echo '<nav class="footer">'
+        if type insert-nav-footer &>/dev/null; then
+            insert-nav-footer "$tree"
+            echo '</nav>'
+        else
+            echo '</nav>'
+            echo '<script>$("#nav .extra").clone().appendTo("nav.footer");</script>'
+        fi
+        echo '.'
         echo 'wq'
     } | ed "$output" &>/dev/null || true
     case $tree in
