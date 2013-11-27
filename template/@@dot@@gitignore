@@ -5,8 +5,10 @@
 
 @@BUILDDIR@@
 /@@STAGEDIR@@
+/@@APPNAME@@.app
 /@@PACKAGENAME@@-*.tar.gz
 /@@PACKAGENAME@@-*.sh
+/@@PACKAGENAME@@-*.dmg
 
 /@@DEPENDSDIR@@/*
 !/@@DEPENDSDIR@@/*.depends

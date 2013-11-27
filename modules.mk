@@ -152,6 +152,38 @@ install: $(PACKAGE)
 endif
 
 
+ifdef APPEXECUTES
+ifeq ($(shell uname),Darwin)
+APPNAME ?= $(PACKAGENAME)
+APPPATHDIR ?= bin
+APP := $(APPNAME).app
+APPRSRCS := $(APP)/Contents/Resources
+APPTEMPLATE := $(BUILDKIT)/template.os-x-app
+app: $(APP)
+$(APP): polish $(APPRSRCS)/Scripts/main.scpt
+	### BuildKit: packaged as $@ for OS X
+$(APPRSRCS)/Scripts/main.scpt: $(APPRSRCS)/Scripts/main.applescript
+	@osacompile -o "$@" -x "$<"
+	@rm -f "$<"
+$(APPRSRCS)/Scripts/main.applescript: $(APPRSRCS)
+$(APPRSRCS): $(APPTEMPLATE) $(STAGEDIR) Makefile
+	@rm -rf "$(realpath $@/../..)"
+	@mkdir -p "$@"/Files
+	@cp -af "$(APPTEMPLATE)"/. "$@"/../..
+	@cp -af "$(STAGEDIR)"/. "$@"/Files/.
+	@cd "$(APPTEMPLATE)"/Contents && { \
+    echo '@@dot@@=.'; \
+    echo '@@APPNAME@@=$(APPNAME)'; \
+    echo '@@APPEXECUTES@@=$(APPEXECUTES)'; \
+    echo '@@APPPATHDIR@@=$(APPPATHDIR)'; \
+} | customize "$(realpath $(SRCROOT))/$(APP)"/Contents \
+    Resources/Scripts/main.applescript \
+    Resources/Scripts/start.sh \
+    Info.plist
+endif
+endif
+
+
 clean:
 	@-! [ -s $(BUILDDIR)/watch.pid ] || kill -TERM -$$(cat $(BUILDDIR)/watch.pid)
 	rm -rf -- $(STAGEDIR) $(BUILDDIR) $(PACKAGE)
@@ -178,13 +210,15 @@ gitclean:
 .PHONY: cleaner clean-depends clean-packages gitclean
 
 # generate some useful files to be used with BuildKit
+APPNAME ?= *
 .gitignore .lvimrc:
 	cd $(shell $(BUILDKIT)/relpath $(SRCROOT) $(BUILDKIT)/template) && { \
-	    echo @@dot@@=.; \
-	    echo @@PACKAGENAME@@=$(PACKAGENAME); \
-	    echo @@DEPENDSDIR@@=$(DEPENDSDIR); \
-	    echo @@BUILDDIR@@=$(BUILDDIR); \
-	    echo @@STAGEDIR@@=$(STAGEDIR); \
+	    echo '@@dot@@=.'; \
+	    echo '@@APPNAME@@=$(APPNAME)'; \
+	    echo '@@PACKAGENAME@@=$(PACKAGENAME)'; \
+	    echo '@@DEPENDSDIR@@=$(DEPENDSDIR)'; \
+	    echo '@@BUILDDIR@@=$(BUILDDIR)'; \
+	    echo '@@STAGEDIR@@=$(STAGEDIR)'; \
 	} | customize $(shell $(BUILDKIT)/relpath $(BUILDKIT)/template $(SRCROOT)) $(@:.%=@@dot@@%)
 
 depends/.module.install:
