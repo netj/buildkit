@@ -17,7 +17,8 @@ export RUNTIMEDEPENDSDIR
 
 PREFIX?=/usr/local
 PACKAGENAME?=$(shell basename $(SRCROOT))
-PACKAGEVERSION?=$(shell $(BUILDKIT)/determine-package-version)
+PACKAGEVERSION_DEFAULT?=$(shell $(BUILDKIT)/determine-package-version)
+PACKAGEVERSION?=$(PACKAGEVERSION_DEFAULT)
 PACKAGEVERSIONSUFFIX?=
 MODULES?=
 export PREFIX
@@ -155,37 +156,47 @@ endif
 ifdef APPEXECUTES
 ifeq ($(shell uname),Darwin)
 APPNAME ?= $(PACKAGENAME)
+APPIDENT ?= $(PACKAGENAME)
+APPCOPYRIGHT ?=
+APPICON ?= /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns
 APPPATHDIR ?= bin
 APP := $(APPNAME).app
 APPRSRCS := $(APP)/Contents/Resources
 APPTEMPLATE := $(BUILDKIT)/template.os-x-app
+define echo_APPPARAMS
+{ \
+    echo '@@dot@@=.'; \
+    echo '@@APPNAME@@=$(APPNAME)'; \
+    echo '@@APPIDENT@@=$(APPIDENT)'; \
+    echo '@@APPCOPYRIGHT@@=$(APPCOPYRIGHT)'; \
+    echo '@@PACKAGEVERSION@@=$(PACKAGEVERSION)'; \
+    echo '@@BUNDLEVERSION@@=$(PACKAGEVERSION_DEFAULT)'; \
+    echo '@@APPEXECUTES@@=$(APPEXECUTES)'; \
+    echo '@@APPPATHDIR@@=$(APPPATHDIR)'; \
+}
+endef
 app: $(APP)
-$(APP): \
-    $(APPRSRCS)/Scripts/main.scpt \
-    $(APPRSRCS)/Scripts/start.sh \
-    $(APP)/Contents/Info.plist \
-    $(APPRSRCS)
+$(APP): $(BUILDDIR)/os-x-app/main.applescript polish Makefile
+	### BuildKit: compiling an OS X app
+	@rm -rf "$@"
+	@osacompile -o "$@" -x -s "$<"
+	# customizing OS X app
+	@cd "$@"/Contents && $(echo_APPPARAMS) | customize "$(APPTEMPLATE)"/Contents
+	@for x in applet droplet; do \
+	    [ -x "$@"/Contents/MacOS/$$x ] || continue; \
+	    mv -f "$@"/Contents/MacOS/$$x          "$@"/Contents/MacOS/"$(APPNAME)"         ; \
+	    mv -f "$@"/Contents/Resources/$$x.rsrc "$@"/Contents/Resources/"$(APPNAME)".rsrc; \
+	    mv -f "$@"/Contents/Resources/$$x.icns "$@"/Contents/Resources/"$(APPNAME)".icns; \
+	done
+	@rsync -aH $(APPICON)                      "$@"/Contents/Resources/"$(APPNAME)".icns
+	# bundling $(STAGEDIR) in OS X app
+	@mkdir -p "$@"/Contents/Resources/Files
+	@rsync -aH --delete "$(STAGEDIR)"/ "$@"/Contents/Resources/Files/
+	@touch "$@"
 	### BuildKit: packaged as $@ for OS X
-$(APPRSRCS)/Scripts/main.scpt: $(APPRSRCS)/Scripts/main.applescript
-	@osacompile -o "$@" -x "$<"
-	@rm -f "$<"
-.SECONDEXPANSION:
-$(APPRSRCS)/Scripts/main.applescript \
-$(APPRSRCS)/Scripts/start.sh \
-$(APP)/Contents/Info.plist: $$(patsubst $(APP)/%,$(APPTEMPLATE)/%,$$@) $(APPRSRCS)
-	@cd "$(APPTEMPLATE)"/Contents && { \
-	    echo '@@dot@@=.'; \
-	    echo '@@APPNAME@@=$(APPNAME)'; \
-	    echo '@@APPEXECUTES@@=$(APPEXECUTES)'; \
-	    echo '@@APPPATHDIR@@=$(APPPATHDIR)'; \
-	} | customize "$(realpath $(SRCROOT))/$(APP)"/Contents "$(<:$(APPTEMPLATE)/Contents/%=%)"
-$(APPRSRCS): $(APPTEMPLATE) $(STAGEDIR) Makefile polish
-	@mkdir -p "$@"/Files
-	@rsync -aH --delete \
-	    --exclude="$@"/Scripts/{main.applescript,start.sh} \
-	    --exclude="$(APP)"/Contents/Info.plist \
-	    "$(APPTEMPLATE)"/. "$@"/../..
-	@rsync -aH --delete "$(STAGEDIR)"/ "$@"/Files/
+$(BUILDDIR)/os-x-app/main.applescript: $(APPTEMPLATE)/Contents/Resources/Scripts/main.applescript
+	@mkdir -p "$(@D)"
+	@cd "$(<D)" && $(echo_APPPARAMS) | customize "$(realpath $(@D))" main.applescript
 endif
 endif
 
