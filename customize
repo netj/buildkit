@@ -47,8 +47,18 @@ while read -r f; do
     h="$Dest/$g"
     d=`dirname "$h"`
     [ -d "$d" ] || mkdir -p -- "$d"
-    # customize contents
-    sed "$subst" <"$f" >"$h.$$~"
-    ! [ -x "$f" ] || chmod +x "$h.$$~"
-    mv -f "$h.$$~" "$h"
+    case `file --dereference --brief --mime-type "$f"` in
+        application/xml | \
+        */*+xml | \
+        *" text "* | \
+        text/*)
+            # customize contents of text files
+            sed "$subst" <"$f" >"$h.$$~"
+            ! [ -x "$f" ] || chmod +x "$h.$$~"
+            mv -f "$h.$$~" "$h"
+            ;;
+        *)
+            # simply copy other types
+            cp -f "$f" "$h"
+    esac
 done
