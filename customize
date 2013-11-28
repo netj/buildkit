@@ -31,7 +31,14 @@ else
 fi
 
 # prepare substitutions
-subst=`sed 's/:/\\\\:/g;  s/^/s:/; s/=/:/; s/$/:g/'`
+subst=`sed '
+    # escape some sed meta characters
+    s/[\:&.*]/\\\\&/g
+    s/\[/\\\\&/g
+    s/\]/\\\\&/g
+    # compile name=value line to sed substitutions
+    s/^/s:/; s/=/:/; s/$/:g/
+'`
 find "$@" -type f |
 while read -r f; do
     [ -e "$f" ] || continue
