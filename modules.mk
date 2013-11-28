@@ -160,26 +160,32 @@ APP := $(APPNAME).app
 APPRSRCS := $(APP)/Contents/Resources
 APPTEMPLATE := $(BUILDKIT)/template.os-x-app
 app: $(APP)
-$(APP): polish $(APPRSRCS)/Scripts/main.scpt
+$(APP): \
+    $(APPRSRCS)/Scripts/main.scpt \
+    $(APPRSRCS)/Scripts/start.sh \
+    $(APP)/Contents/Info.plist \
+    $(APPRSRCS)
 	### BuildKit: packaged as $@ for OS X
 $(APPRSRCS)/Scripts/main.scpt: $(APPRSRCS)/Scripts/main.applescript
 	@osacompile -o "$@" -x "$<"
 	@rm -f "$<"
-$(APPRSRCS)/Scripts/main.applescript: $(APPRSRCS)
-$(APPRSRCS): $(APPTEMPLATE) $(STAGEDIR) Makefile
-	@rm -rf "$(realpath $@/../..)"
-	@mkdir -p "$@"/Files
-	@cp -af "$(APPTEMPLATE)"/. "$@"/../..
-	@cp -af "$(STAGEDIR)"/. "$@"/Files/.
+.SECONDEXPANSION:
+$(APPRSRCS)/Scripts/main.applescript \
+$(APPRSRCS)/Scripts/start.sh \
+$(APP)/Contents/Info.plist: $$(patsubst $(APP)/%,$(APPTEMPLATE)/%,$$@) $(APPRSRCS)
 	@cd "$(APPTEMPLATE)"/Contents && { \
-    echo '@@dot@@=.'; \
-    echo '@@APPNAME@@=$(APPNAME)'; \
-    echo '@@APPEXECUTES@@=$(APPEXECUTES)'; \
-    echo '@@APPPATHDIR@@=$(APPPATHDIR)'; \
-} | customize "$(realpath $(SRCROOT))/$(APP)"/Contents \
-    Resources/Scripts/main.applescript \
-    Resources/Scripts/start.sh \
-    Info.plist
+	    echo '@@dot@@=.'; \
+	    echo '@@APPNAME@@=$(APPNAME)'; \
+	    echo '@@APPEXECUTES@@=$(APPEXECUTES)'; \
+	    echo '@@APPPATHDIR@@=$(APPPATHDIR)'; \
+	} | customize "$(realpath $(SRCROOT))/$(APP)"/Contents "$(<:$(APPTEMPLATE)/Contents/%=%)"
+$(APPRSRCS): $(APPTEMPLATE) $(STAGEDIR) Makefile polish
+	@mkdir -p "$@"/Files
+	@rsync -aH --delete \
+	    --exclude="$@"/Scripts/{main.applescript,start.sh} \
+	    --exclude="$(APP)"/Contents/Info.plist \
+	    "$(APPTEMPLATE)"/. "$@"/../..
+	@rsync -aH --delete "$(STAGEDIR)"/ "$@"/Files/
 endif
 endif
 
@@ -212,14 +218,14 @@ gitclean:
 # generate some useful files to be used with BuildKit
 APPNAME ?= *
 .gitignore .lvimrc:
-	cd $(shell $(BUILDKIT)/relpath $(SRCROOT) $(BUILDKIT)/template) && { \
+	cd "$(BUILDKIT)"/template && { \
 	    echo '@@dot@@=.'; \
 	    echo '@@APPNAME@@=$(APPNAME)'; \
 	    echo '@@PACKAGENAME@@=$(PACKAGENAME)'; \
 	    echo '@@DEPENDSDIR@@=$(DEPENDSDIR)'; \
 	    echo '@@BUILDDIR@@=$(BUILDDIR)'; \
 	    echo '@@STAGEDIR@@=$(STAGEDIR)'; \
-	} | customize $(shell $(BUILDKIT)/relpath $(BUILDKIT)/template $(SRCROOT)) $(@:.%=@@dot@@%)
+	} | customize "$(realpath $(SRCROOT))" $(@:.%=@@dot@@%)
 
 depends/.module.install:
 	@mkdir -p $(@D)/{bundled,runtime}
