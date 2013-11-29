@@ -1,25 +1,44 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # package-os-x-app-dmg -- Generate a .dmg given an OS X App and template .dmg
-# usage: package-os-x-app-dmg APPNAME TEMPLATEDMG
+# usage: package-os-x-app-dmg APP DMGTEMPLATE OUTPUTDMG
 # 
-# This tool will generate APPNAME.dmg by combining contents of APPNAME.app and
-# those from TEMPLATEDMG.  The APPNAME.app to be injected should be in the
-# current working directory, whereas TEMPLATEDMG can be any path reachable from
-# it.  The APPNAME.dmg will be created in the current working directory, that
-# is where you run this tool.
+# This tool will package the given APP and the files under DMGTEMPLATE with a
+# symlink to /Applications folder into a compressed disk image OUTPUTDMG.  The
+# name of the APP will be used as the volume name of the OUTPUTDMG.
 #
 # See: http://digital-sushi.org/entry/how-to-create-a-disk-image-installer-for-apple-mac-os-x/
 set -e
 
-[ $# -eq 2 ] || { sed -n '2,/^#$/ s/^# //p'; exit 1; }
-AppName=$1; shift
-TemplateDMGPath=$1; shift
+[ $# -eq 3 ] || { sed -n '2,/^#$/ s/^# //p' <"$0"; exit 1; }
+App=$1; shift
+DiskImageTemplate=$1; shift
+DiskImageTemplate=$(cd "$DiskImageTemplate" && pwd -P)
+OutputDiskImage=$1; shift
 
-rm -f "$AppName".sparseimage
-hdiutil convert "$TemplateDMGPath" -format UDSP -o "$AppName"
-hdiutil mount "$AppName".sparseimage
-cp -pPR "$AppName".app/Contents /Volumes/"$AppName"/"$AppName".app/Contents
-hdiutil eject /Volumes/"$AppName"
-rm -f "$AppName".dmg
-hdiutil convert "$AppName".sparseimage -format UDBZ -o "$AppName".dmg
-rm -f "$AppName".sparseimage
+outputSparseImage=${OutputDiskImage%.dmg}.sparsebundle
+appName=$(basename "$App" .app)
+
+# create sparsebundle
+hdiutil create \
+    -size $((10 + $(du -sm "$App" | cut -f1)))m \
+    -type SPARSEBUNDLE -fs HFS+ -volname "$appName" -ov \
+    "${outputSparseImage%.sparsebundle}"
+mountpt=$(hdiutil attach "$outputSparseImage" | tail -1 | cut -f3)
+
+# inject into app
+mkdir -p "$mountpt"/"$appName".app
+ditto "$App" "$mountpt"/"$appName".app
+ln -sfn /Applications "$mountpt"/
+(
+cd "$mountpt"
+{
+    echo "@@dot@@=."
+    echo "@@APPNAME@@=$appName"
+} | customize "$DiskImageTemplate"
+)
+hdiutil eject "$mountpt"
+
+# convert into a compressed image
+rm -f "$OutputDiskImage"
+hdiutil convert "$outputSparseImage" -format UDBZ -o "$OutputDiskImage"
+rm -rf "$outputSparseImage"
