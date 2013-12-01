@@ -28,7 +28,7 @@ on count
 end count
 
 to startProcess(fs)
-	set startScript to POSIX path of (path to resource "Scripts/start.sh")
+	set startScript to POSIX path of (path to resource "Scripts") & "start.sh"
 	set names to ""
 	repeat with f in fs
 		set names to names & " " & quoted form of (POSIX path of f)
@@ -57,7 +57,7 @@ to stopAllProcesses()
 end stopAllProcesses
 
 to runCommand(cmd)
-	set pathDir to POSIX path of (path to resource "Files/@@APPPATHDIR@@")
+	set pathDir to POSIX path of (path to resource "Files") & "@@APPPATHDIR@@"
 	do shell script ¬
 		"set -eu; "& ¬
 		"export PATH="& quoted form of pathDir &":\"$PATH\"; "& ¬
