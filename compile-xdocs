@@ -32,7 +32,11 @@ for input; do
         }
         my $md = join "", <>;
         while ($md =~ /(.*?)<\$(.*?)\$>|(.*)$/sg) {
-            if (defined $2) { echo($1); print $2, "\n"; }
+            if (defined $2) { echo($1);
+                my $code = $2;
+                if ($code =~ /^=\s*(.*)/) { printf "printf %%s %s\n", $1; }
+                else { print $code, "\n"; }
+            }
             elsif ($3 ne "") { echo($3); }
         }
     '
@@ -42,6 +46,6 @@ for input; do
 done
 } |
   if [ -n "${DRYRUN:-}" ]; then cat
-elif [ -n "${DEBUG:-}"  ]; then sh -x
-else                            sh
+elif [ -n "${DEBUG:-}"  ]; then bash -x
+else                            bash
 fi
