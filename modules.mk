@@ -194,9 +194,12 @@ $(APP): $(BUILDDIR)/os-x-app/main.applescript polish Makefile
 	@rsync -aH --delete "$(STAGEDIR)"/ "$@"/Contents/Resources/Files/
 	@touch "$@"
 	### BuildKit: compiled OS X app as $@
-$(BUILDDIR)/os-x-app/main.applescript: $(APPTEMPLATE)/Contents/Resources/Scripts/main.applescript
+$(BUILDDIR)/os-x-app/main.applescript: $(APPTEMPLATE).applescript
 	@mkdir -p "$(@D)"
-	@cd "$(<D)" && $(echo_APPPARAMS) | customize "$(realpath $(@D))" main.applescript
+	@cd "$(<D)" && { \
+	    echo "./$(<F)=./$(@F)"; \
+	    $(echo_APPPARAMS); \
+	} | customize "$(realpath $(@D))" ./"$(<F)"
 .PHONY: app
 
 DMG := $(PACKAGENAME)-$(PACKAGEVERSION)$(PACKAGEVERSIONSUFFIX).dmg
