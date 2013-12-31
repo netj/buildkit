@@ -200,7 +200,10 @@ $(BUILDDIR)/os-x-app/main.applescript: $(APPTEMPLATE).applescript
 	    echo "./$(<F)=./$(@F)"; \
 	    $(echo_APPPARAMS); \
 	} | customize "$(realpath $(@D))" ./"$(<F)"
-.PHONY: app
+clean: clean-app
+clean-app:
+	rm -rf -- $(APP)
+.PHONY: app clean-app
 
 DMG := $(PACKAGENAME)-$(PACKAGEVERSION)$(PACKAGEVERSIONSUFFIX).dmg
 DMGTEMPLATE ?= $(BUILDKIT)/template.os-x-app.dmg
@@ -208,7 +211,10 @@ dmg: $(DMG)
 $(DMG): $(APP) app
 	@package-os-x-app-dmg "$<" "$(DMGTEMPLATE)" "$@"
 	### BuildKit: packaged disk image for $< as $@
-.PHONY: dmg
+clean-packages: clean-dmgs
+clean-dmgs:
+	rm -f $(PACKAGENAME)-*.dmg
+.PHONY: dmg clean-dmgs
 endif
 endif
 
