@@ -30,21 +30,21 @@ fileOK() {
         for hashType in sha1sum shasum md5sum md5; do
             hash=${!hashType:-}
             [[ -n "$hash" ]] && type "$hashType" &>/dev/null || continue
-            fileOK=false # expected hash exists
+            fileOK=false # assume corrupted when we got a hash sum that can be checked
             if "$hashType" <"$File" | grep -qF "$hash"; then
-                fileOK=true
+                fileOK=true # and until we found a correct hash sum
                 break
             fi
         done
     fi
     $fileOK
 }
-fileOK || cp -f "$cached" "$File" &&
-fileOK || curl --continue-at - --location --output "$File" "$URL" &&
-fileOK || curl --location --output "$File" "$URL" &&
-fileOK || wget --continue --output-document="$File" "$URL" &&
-fileOK || wget --output-document="$File" "$URL" &&
-fileOK
+fileOK ||
+    { cp -f "$cached" "$File"                                 && fileOK; } ||
+    { curl --continue-at - --location --output "$File" "$URL" && fileOK; } ||
+    { curl --location --output "$File" "$URL"                 && fileOK; } ||
+    { wget --continue --output-document="$File" "$URL"        && fileOK; } ||
+    { wget --output-document="$File" "$URL"                   && fileOK; }
 
 # cache for later (not critical)
 set +e
