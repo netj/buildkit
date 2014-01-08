@@ -30,9 +30,9 @@ SRCROOT=$(pwd -P)
 coalesce_interval=0.1
 
 # use watchmedo to incrementally update the lastmodified links
-watchmedo shell-command --recursive \
-    --ignore-patterns="*/.git;*/.git/*;*/.build;*/.build/*;$BUILDDIR;$BUILDDIR/*;$STAGEDIR;$STAGEDIR/*" \
-    --command='echo ${watch_event_type} "${watch_src_path}" || kill -TERM $PPID' |
+watch-filesystem-events .  "*/.git" "*/.git/*" \
+    "*/.build" "*/.build/*" "$BUILDDIR" "$BUILDDIR/*" \
+    "$STAGEDIR" "$STAGEDIR/*" |
 {
     # XXX A workaround for obscured file modified events
     # Sometimes when files are modified with a text editor in some
