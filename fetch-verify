@@ -31,7 +31,10 @@ fileOK() {
             hash=${!hashType:-}
             [[ -n "$hash" ]] && type "$hashType" &>/dev/null || continue
             fileOK=false # expected hash exists
-            ! "$hashType" <"$File" | grep -qF "$hash" || exit 0
+            if "$hashType" <"$File" | grep -qF "$hash"; then
+                fileOK=true
+                break
+            fi
         done
     fi
     $fileOK
