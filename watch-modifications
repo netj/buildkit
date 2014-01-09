@@ -7,7 +7,7 @@ shopt -s extglob
 
 # abort if already running
 pid="$BUILDDIR"/watch.pid
-if [ -s "$pid" ] && ps -o command= -p $(cat "$pid" 2>/dev/null) | grep -q watchmedo; then
+if [ -s "$pid" ] && ps -o command= -p $(cat "$pid" 2>/dev/null) | grep -q watch-filesystem-events; then
     exit 0
 else
     rm -f "$pid"
