@@ -26,12 +26,18 @@ export PREFIX
 .PHONY: all depends build index stage polish test clean package install
 DEPENDS := $(BUILDDIR)/depends.found-all
 STAGED  := $(BUILDDIR)/staged
+POLISHED := $(BUILDDIR)/polished
+TESTED  := $(BUILDDIR)/tested
 
 all: test
 
-test: polish
+test: $(TESTED)
+$(TESTED): $(POLISHED)
+	@touch $@
 
-polish: stage
+polish: $(POLISHED)
+$(POLISHED): stage
+	@touch $@
 
 stage: build
 
