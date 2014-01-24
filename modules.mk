@@ -33,10 +33,12 @@ all: test
 
 test: $(TESTED)
 $(TESTED): $(POLISHED)
+	### BuildKit: finished all tests
 	@touch $@
 
 polish: $(POLISHED)
 $(POLISHED): stage
+	### BuildKit: polished $(STAGEDIR)/
 	@touch $@
 
 stage: build
