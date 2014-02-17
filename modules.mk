@@ -57,8 +57,10 @@ build:
 
 else # !STAGING
 
-stage index:
+index:
 	@rm -f $(BUILDDIR)/modules
+	@$(MAKE) STAGING=yes $@
+stage:
 	@$(MAKE) STAGING=yes $@
 
 # Watch module modifications, or simply invalidate previous timestamps
