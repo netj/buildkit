@@ -30,6 +30,7 @@ SRCROOT=$(pwd -P)
 coalesce_interval=0.1
 
 # use watchmedo to incrementally update the lastmodified links
+PYTHONUNBUFFERED=true \
 watch-filesystem-events .  "*/.git" "*/.git/*" \
     "*/.build" "*/.build/*" "$BUILDDIR" "$BUILDDIR/*" \
     "$STAGEDIR" "$STAGEDIR/*" |
