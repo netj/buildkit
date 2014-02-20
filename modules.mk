@@ -23,7 +23,7 @@ PACKAGEVERSIONSUFFIX?=
 MODULES?=
 export PREFIX
 
-.PHONY: all depends build index stage polish test clean package install
+.PHONY: all depends build refresh stage polish test clean package install
 DEPENDS := $(BUILDDIR)/depends.found-all
 STAGED  := $(BUILDDIR)/staged
 POLISHED := $(BUILDDIR)/polished
@@ -47,7 +47,6 @@ ifdef STAGING
 stage: $(STAGED)
 # staging rules
 -include $(BUILDDIR)/stage.mk
-index \
 $(BUILDDIR)/stage.mk: $(BUILDDIR)/modules \
                       $(BUILDKIT)/generate-staging-rules $(BUILDKIT)/modules.mk
 	### BuildKit: generating staging rules
@@ -57,9 +56,10 @@ build:
 
 else # !STAGING
 
-index:
-	@rm -f $(BUILDDIR)/modules
-	@$(MAKE) STAGING=yes $@
+refresh:
+	### BuildKit: refreshing
+	@rm -f $(BUILDDIR)/modules $(BUILDDIR)/stage.mk
+	@$(MAKE) STAGING=yes
 stage:
 	@$(MAKE) STAGING=yes $@
 
@@ -95,6 +95,7 @@ ifneq ($(MODULES),)
 	### BuildKit: MODULES="$(MODULES)"
 	@printf '%s\n' $(MODULES) >$@
 else
+	### BuildKit: looking for all modules
 	@all-modules >$@
 endif
 

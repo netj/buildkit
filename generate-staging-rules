@@ -143,7 +143,7 @@ echo '	### BuildKit: staged all modules'
 # XXX warning about variable source patterns in .module.install files
 if [ ${#varsrcpatts[@]} -gt 0 ]; then
     echo '	@echo >&2'
-    echo '	@echo "### BuildKit: WARNING! Run \`make index\` after adding/removing following files:" >&2'
+    echo '	@echo "### BuildKit: WARNING! Run \`make refresh\` after adding/removing following files:" >&2'
     for varsrcpatt in "${varsrcpatts[@]}"; do
         echo '	@echo "###   '"$varsrcpatt"'" >&2'
     done
