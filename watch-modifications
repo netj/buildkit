@@ -17,8 +17,21 @@ fi
 [ -s "$BUILDDIR"/modules ]
 xargs <"$BUILDDIR"/modules -I{}  rm -f "$BUILDDIR"/timestamp/{}.lastmodified
 
-# abort if we don't have watchmedo (See: https://pypi.python.org/pypi/watchdog)
-type watchmedo &>/dev/null
+# abort if we don't have watchdog Python module (See: https://pypi.python.org/pypi/watchdog)
+python -c 'from watchdog.observers import *' &>/dev/null || {
+    rm -f "$BUILDDIR"/stage.mk
+    echo '# WARNING: BuildKit is unable monitor modifications to your modules!!'
+    echo '# '
+    echo '# For faster and correct incremental builds, install Python watchdog package:'
+    echo '# '
+    echo '#     pip install watchdog'
+    echo '# '
+    echo '# Otherwise, to ensure your build is always correct, you must run:'
+    echo '# '
+    echo '#     make refresh'
+    echo '# '
+    false
+} >&2
 
 # close I/O
 exec </dev/null >"$BUILDDIR"/watch.log 2>&1
