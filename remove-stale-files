@@ -26,7 +26,7 @@ else grep -vf stage.contents.dirs; fi || true
 (
 cd "$STAGEDIR"
 xargs rm -rfv | sed '
-    /removed ‘\./ s*removed ‘\.*removed stale file: ‘'"$STAGEDIR"'*
-    \#^\./#               s*^\.*removed stale file: '"$STAGEDIR"'*
+    /removed .*‘\./ s*removed .\*‘\.*removed stale file: ‘'"$STAGEDIR"'*
+    \#^\./#                    s*^\.*removed stale file: '"$STAGEDIR"'*
 '
 ) <"$BUILDDIR"/stage.stale
