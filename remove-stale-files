@@ -17,8 +17,9 @@ if [ -s "$ignore" ] && type git &>/dev/null; then
     [ -d "$GIT_DIR" ] || git init --quiet --bare "$GIT_DIR"
     git --git-dir="$GIT_DIR" --work-tree="$STAGEDIR" ls-files \
         --full-name -z --others --directory --exclude-from="$ignore" . |
+    (cd "$STAGEDIR" && xargs -0 -I {}  find {} ! -type d -print0) |
     tr '\0' '\n' |
-    sed 's:^:./:' |
+    sed 's:^:./:; s://*:/:g' |
     sort
     )
 else
