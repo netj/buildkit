@@ -14,6 +14,7 @@ BUILDDIR?=.build
 #DEPENDSDIR?=.depends
 RUNTIMEDEPENDSDIR?=depends
 export RUNTIMEDEPENDSDIR
+STAGEIGNORE?=.stage.ignore
 
 PREFIX?=/usr/local
 PACKAGENAME?=$(shell basename $(SRCROOT))

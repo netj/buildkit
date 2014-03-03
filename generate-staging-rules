@@ -55,9 +55,11 @@ for Module; do
                     ;;
             esac
             dst=`eval echo "$dst"`
-            # TODO normalize path systematically
+            # TODO normalize path more systematically
+            [[ $dst != /* ]] || dst=.$dst # no absolute paths
+            dst=${dst//\/\///}
             dstdir="\$(STAGEDIR)/${dst%/*}/"
-            dst=${dst#./}
+            dst=${dst##+(./|/)}
             dstdir=${dstdir//\/.\///}
             dstpath=$dst
             # make explicit whether source is a directory or not in its name
@@ -136,6 +138,7 @@ sed -n '\:/$: s:/$:\\(/.*\\)\\?$:p' <stage.contents >stage.contents.dirs
 
 # generate what's to be done after staging
 echo '$(STAGED):'
+echo '	@! [ -e $(STAGEIGNORE) -a ! -L $(BUILDDIR)/stage.ignore ] || relsymlink $(STAGEIGNORE) $(BUILDDIR)/stage.ignore'
 echo '	@STAGEDIR=$(STAGEDIR) BUILDDIR=$(BUILDDIR) \'
 echo "remove-stale-files"
 echo '#	@touch $@'

@@ -9,10 +9,24 @@ unset CDPATH
 [ -d "$STAGEDIR" ] || exit 0
 
 # find files in stage
-(
-cd "$STAGEDIR"
-find . | sort
-) >"$BUILDDIR"/stage.found
+ignore="$BUILDDIR"/stage.ignore
+if [ -s "$ignore" ] && type git &>/dev/null; then
+    # ignore some files with git
+    (
+    GIT_DIR="$BUILDDIR"/stage.ignore.git
+    [ -d "$GIT_DIR" ] || git init --quiet --bare "$GIT_DIR"
+    git --git-dir="$GIT_DIR" --work-tree="$STAGEDIR" ls-files \
+        --full-name -z --others --directory --exclude-from="$ignore" . |
+    tr '\0' '\n' |
+    sed 's:^:./:' |
+    sort
+    )
+else
+    (
+    cd "$STAGEDIR"
+    find . | sort
+    )
+fi >"$BUILDDIR"/stage.found
 
 # find files not specified in contents except dirs from them
 (
