@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# @@PACKAGENAME@@ shell
+# Usage: @@SHELL_NAME@@ [-OPTION] COMMAND [ARG]...
+# 
+# Global OPTION is one of:
+#   -v      increase verbosity
+#   -q      suppress all messages
+#   -t      force logging to non-ttys
+#           (default is to log messages to stderr only when it's a tty)
+#
+# Generated: @@GENERATED_TIMESTAMP@@
+set -eu
+
+if [ -z "${@@SHELL_ENVVARPREFIX@@_HOME:-}" ]; then
+    export @@SHELL_ENVVARPREFIX@@_COMMAND=${POJANG_ORIGINAL_COMMAND:-$0}
+    unset POJANG_ORIGINAL_COMMAND
+    if [ x"$@@SHELL_ENVVARPREFIX@@_COMMAND" = x"$(type -p "@@SHELL_NAME@@" 2>/dev/null)" ]; then
+        # no need to expand command when it's on PATH
+        @@SHELL_ENVVARPREFIX@@_COMMAND=@@SHELL_NAME@@
+    else
+        # resolve relative path (but no need to follow symlinks)
+        @@SHELL_ENVVARPREFIX@@_COMMAND="$(cd "$(dirname "$@@SHELL_ENVVARPREFIX@@_COMMAND")"; pwd)/$(basename "$@@SHELL_ENVVARPREFIX@@_COMMAND")"
+    fi
+    export USAGE_TOOL_COMMAND=@@SHELL_NAME@@  USAGE_TOOL_PATH=$@@SHELL_ENVVARPREFIX@@_COMMAND
+    Self=$(readlink -f "$0" 2>/dev/null || {
+        # XXX readlink -f is only available in GNU coreutils
+        cd $(dirname -- "$0")
+        n=$(basename -- "$0")
+        if [ -L "$n" ]; then
+            L=$(readlink "$n")
+            if [ x"$L" != x"${L#/}" ]; then
+                echo "$L"; exit
+            else
+                cd "$(dirname -- "$L")"
+                n=$(basename -- "$L")
+            fi
+        fi
+        echo "$(pwd -P)/$n"
+    })
+    Here=$(dirname "$Self")
+
+    # Keep a backup of some environment variables
+    for v in PATH NODE_PATH
+    do  vbak=@@SHELL_ENVVARPREFIX@@_ORIG_$v
+          declare -p $v    &>/dev/null || continue
+        ! declare -p $vbak &>/dev/null || continue
+        export "$vbak=${!v}"
+    done
+
+    # Setup environment
+    unset CDPATH
+    export @@SHELL_ENVVARPREFIX@@_HOME=${Here%/@@SHELL_BINDIR@@}
+    #  dependencies
+    PATH="$@@SHELL_ENVVARPREFIX@@_HOME/depends/bundled/.all/bin:$PATH"
+    PATH="$@@SHELL_ENVVARPREFIX@@_HOME/depends/runtime/.all/bin:$PATH"
+    #  node_modules
+    export NODE_PATH="$@@SHELL_ENVVARPREFIX@@_HOME/node_modules${NODE_PATH:+:$NODE_PATH}"
+    PATH="$@@SHELL_ENVVARPREFIX@@_HOME/node_modules/.bin:$PATH"
+    #  shell runtime scripts
+    PATH="$@@SHELL_ENVVARPREFIX@@_HOME/@@SHELL_RUNTIMEDIR@@:$PATH"
+    export PATH
+
+    # for msg logging
+    export SHLVL=0 @@SHELL_ENVVARPREFIX@@_LOGLVL=${@@SHELL_ENVVARPREFIX@@_LOGLVL:-1}
+    # export @@SHELL_ENVVARPREFIX@@_LOG_TO_NONTTY=
+fi
+
+# make sure everything we need is available
+"$@@SHELL_ENVVARPREFIX@@_HOME"/depends/check-runtime-depends-once
+
+
+# Process options
+while getopts "vtq" opt; do
+    case $opt in
+        v)
+            let ++@@SHELL_ENVVARPREFIX@@_LOGLVL
+            ;;
+        q)
+            @@SHELL_ENVVARPREFIX@@_LOGLVL=0
+            ;;
+        t)
+            export @@SHELL_ENVVARPREFIX@@_LOG_TO_NONTTY=true
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+
+# Process input arguments
+[ $# -gt 0 ] || usage "$0" "No COMMAND given"
+Cmd=$1; shift
+
+
+# Check if it's a valid command
+exe=@@SHELL_NAME@@-"$Cmd"
+if type "$exe" &>/dev/null; then
+    set -- "$exe" "$@"
+else
+    usage "$0" "$Cmd: invalid COMMAND"
+fi
+
+
+# Run given command under this environment
+exec "$@"

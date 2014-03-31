@@ -3,6 +3,7 @@
 # Created: 2010-07-25
 
 SRCROOT:=$(shell pwd)
+PROJECTNAME?=$(shell basename $(SRCROOT))
 BUILDKIT?=$(SRCROOT)/buildkit
 SHELL:=$(shell which bash)
 PATH:=$(BUILDKIT):$(PATH)
@@ -17,12 +18,19 @@ export RUNTIMEDEPENDSDIR
 STAGEIGNORE?=.stage.ignore
 
 PREFIX?=/usr/local
-PACKAGENAME?=$(shell basename $(SRCROOT))
+PACKAGENAME?=$(PROJECTNAME)
 PACKAGEVERSION_DEFAULT?=$(shell $(BUILDKIT)/determine-package-version)
 PACKAGEVERSION?=$(PACKAGEVERSION_DEFAULT)
 PACKAGEVERSIONSUFFIX?=
 MODULES?=
 export PREFIX
+
+# shell template arguments
+SHELL_MODULEPATH?=shell
+SHELL_NAME?=$(PACKAGENAME)
+SHELL_BINDIR?=bin
+SHELL_RUNTIMEDIR?=bin/$(SHELL_NAME).d
+SHELL_ENVVARPREFIX?=$(shell n=`echo $(SHELL_NAME) | tr a-z A-Z`; [ x"$$n" = x"$${n\#[^A-Za-z]}" ] || n="_$$n"; echo "$$n")
 
 .PHONY: all depends build refresh stage polish test clean package install
 DEPENDS := $(BUILDDIR)/depends.found-all
@@ -289,4 +297,19 @@ depends/.module.install:
 	#     @prefix@/$$RUNTIMEDEPENDSDIR/check-runtime-depends-once
 	# Add @prefix@/$$RUNTIMEDEPENDSDIR/runtime/.all/bin to your PATH at runtime if
 	# you install anything on the fly.
+
+
+shell/$(SHELL_NAME):
+	@mkdir -p $(SHELL_MODULEPATH)
+	cd "$(SHELL_MODULEPATH)" && { \
+	    echo '@@dot@@=.'; \
+	    echo '@@APPNAME@@=$(APPNAME)'; \
+	    echo '@@PACKAGENAME@@=$(PACKAGENAME)'; \
+	    echo '@@RUNTIMEDEPENDSDIR@@=$(RUNTIMEDEPENDSDIR)'; \
+	    echo '@@GENERATED_TIMESTAMP@@=$(shell date +%F)'; \
+	    echo '@@SHELL_NAME@@=$(SHELL_NAME)'; \
+	    echo '@@SHELL_BINDIR@@=$(SHELL_BINDIR)'; \
+	    echo '@@SHELL_RUNTIMEDIR@@=$(SHELL_RUNTIMEDIR)'; \
+	    echo '@@SHELL_ENVVARPREFIX@@=$(SHELL_ENVVARPREFIX)'; \
+	} | customize "$(realpath $(BUILDKIT)/template.shell)"
 

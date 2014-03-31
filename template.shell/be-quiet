@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# be-quiet -- Check if logging is suppressed by $@@SHELL_ENVVARPREFIX@@_LOGLVL
+# 
+# > be-quiet [+-ADJUSTMENT]
+# Use positive ADJUSTMENT if the caller is thought to be handling a subtask.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-01
+(( @@SHELL_ENVVARPREFIX@@_LOGLVL += 1 - $SHLVL - ${1:-0} ))
+[[ $@@SHELL_ENVVARPREFIX@@_LOGLVL -lt 0 ]]

@@ -1,0 +1,7 @@
+@@SHELL_NAME@@                  @@SHELL_BINDIR@@/
+@@SHELL_NAME@@-hack             @@SHELL_RUNTIMEDIR@@/
+error                           @@SHELL_RUNTIMEDIR@@/
+usage                           @@SHELL_RUNTIMEDIR@@/
+msg                             @@SHELL_RUNTIMEDIR@@/
+be-quiet                        @@SHELL_RUNTIMEDIR@@/
+verbosity-isnt                  @@SHELL_RUNTIMEDIR@@/
