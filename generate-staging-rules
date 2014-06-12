@@ -37,7 +37,7 @@ for Module; do
         # XXX whitespace in .module.install is disallowed because of these two lines
         line=${line//[	 ]/ }
         read srcpatt dstpatt rest <<<"$line" || continue
-        [ -n "$srcpatt" -a -n "$dstpatt" ] || continue
+        [[ -n "$srcpatt" && -n "$dstpatt" ]] || continue
         numSrcs=0
         lastSrc=
         # expand source pathname
@@ -47,24 +47,30 @@ for Module; do
             lastSrc=$src
             src=${src#"$Module"/}
             dst=$dstpatt
-            srcname=${src%/}
-            # expand destination pathname
-            case $dst in
-                */)
-                    dst+=${srcname##*/}
-                    ;;
-            esac
+            # there are four cases of $src and $dst:
+            #   foo   bar   # stages file     foo   to bar
+            #   foo   bar/  # stages file/dir foo   to bar/foo
+            #   foo/  bar   # stages      dir foo/. to bar/.
+            #   foo/  bar/  # stages      dir foo/. to bar/foo/.
+            # and some more with dots and stars:
+            #   foo/. bar   # stages      dir foo/. to bar/.
+            #   foo/. bar/  # stages      dir foo/. to bar/foo/.
+            #   foo/* bar/  # stages files in foo/* to bar/*
+            # normalize the source path
+            src=${src%%+(/.)}                   # no /. suffix
+            srcname=${src%%+(/)}                # the name without / suffix
+            # first, expand destination path
+            case $dst in */) dst+=${srcname##*/} ;; esac
             dst=`eval echo "$dst"`
-            # TODO normalize path more systematically
-            [[ $dst != /* ]] || dst=.$dst # no absolute paths
-            dst=${dst//\/\///}
+            # normalize the path
+            [[ $dst != /* ]] || dst=.$dst       # no absolute paths
+            dst=${dst//@(+(\/)|\/.\/)//}        # no repeated slashes, or /./
+            dst=${dst#./}                       # no ./ prefix
             dstdir="\$(STAGEDIR)/${dst%/*}/"
-            dst=${dst##+(./|/)}
-            dstdir=${dstdir//\/.\///}
             dstpath=$dst
             # make explicit whether source is a directory or not in its name
-            if [ -d "$Module/$src" ]; then
-                src=${src%/}/
+            if [[ $src = */ || -d "$Module/$src" ]]; then
+                src=$srcname/
                 dstpath+=/
             fi
             # generate staging rule
@@ -98,7 +104,7 @@ for Module; do
 done
 
 # generate directory creation rules
-if [ ${#dstdirs[@]} -gt 0 ]; then
+if [[ ${#dstdirs[@]} -gt 0 ]]; then
     echo "# Directories"
     printf '%s\n' "${dstdirs[@]}" | awk '!a[$0]++ {print}' |
     while read dstdir; do
@@ -144,7 +150,7 @@ echo "remove-stale-files"
 echo '#	@touch $@'
 echo '	### BuildKit: staged all modules'
 # XXX warning about variable source patterns in .module.install files
-if [ ${#varsrcpatts[@]} -gt 0 ]; then
+if [[ ${#varsrcpatts[@]} -gt 0 ]]; then
     echo '	@echo >&2'
     echo '	@echo "### BuildKit: WARNING! Run \`make refresh\` after adding/removing following files:" >&2'
     for varsrcpatt in "${varsrcpatts[@]}"; do
