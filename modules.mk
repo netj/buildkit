@@ -6,7 +6,7 @@ SRCROOT:=$(shell pwd)
 PROJECTNAME?=$(shell basename $(SRCROOT))
 BUILDKIT?=$(SRCROOT)/buildkit
 SHELL:=$(shell which bash)
-PATH:=$(BUILDKIT):$(PATH)
+PATH:=$(BUILDKIT):$(BUILDKIT)/recipes:$(PATH)
 CDPATH:=
 export SHELL PATH SRCROOT BUILDKIT
 
