@@ -14,7 +14,7 @@ stageDir()  { echo "rm -rf $2; \\"; echo "cp -Rfa $1 $2"; }
 # use rsync for directory instead of cp -R when available
 if type rsync &>/dev/null; then
     #stageFile() { echo "rsync $1 $2"; } # XXX using rsync for individual files is slower than cp
-    stageDir() { echo "rsync -aH --delete $1 $2"; }
+    stageDir() { echo "rsync -aH --copy-unsafe-links $1 $2"; }
 fi
 
 echo '# Make rules for staging products of every module'
