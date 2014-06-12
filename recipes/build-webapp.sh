@@ -14,8 +14,9 @@
 #   compile from=.less   to=.css    with=compile-less          src=$dest/less/   out=$dest/css/        less/*.less
 # 
 #   # If you use requirejs, you might want to convert some code to AMD first
-#   compile from=.coffee to=.coffee with=convert-AMD-coffee    src=$dest/coffee/ out=$dest/coffee.amd/ **/*.coffee
-#   compile from=.coffee to=.js     with=compile-coffee        src=              out=$dest/js/         $dest/coffee.amd/*.coffee
+#   compile from=.coffee to=.coffee with=convert-AMD-coffee src=              out=$dest/coffee/ **/!(main).coffee
+#   compile from=.coffee to=.js     with=compile-coffee     src=              out=$dest/js/     $dest/coffee/!(main).coffee
+#   compile from=.coffee to=.js     with=compile-coffee     src=$dest/coffee/ out=$dest/js/     coffee/main.coffee
 #
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2014-06-12
@@ -24,31 +25,37 @@ set -eu
 
 # how to compile CoffeeScript to JavaScript
 compile-coffee() {
-    local src=$1 out=$2 outDir=$3
+    local src=$1 out=$2
+    local outDir=${3:-$(dirname "$out")}
     echo >&2 "Compiling $out from $src..."
     coffee -m -o "$outDir" -c "$src"
 }
 
 # how to compile LESS to CSS
 compile-less() {
-    local src=$1 out=$2 outDir=$3
+    local src=$1 out=$2
+    local outDir=${3:-$(dirname "$out")}
     echo >&2 "Compiling $out from $src..."
     lessc "$src" "$out"
 }
 
 # how to convert plain JS/CS codes to AMD modules
 convert-AMD-js() {
-    local src=$1 out=$2 outDir=$3 prologue=${4:-} epilogue=${5:-}
+    local src=$1 out=$2
+    case $out in */) out+=$(basename "$src") ;; esac
+    local outDir=${3:-$(dirname "$out")} prologue=${4:-} epilogue=${5:-}
     echo >&2 "Converting to AMD $out from $src..."
     rm -f "$out"
     {
-        echo -n 'define(function(require, exports, module) { '"$prologue"
+        echo -n 'define(function(require, exports, module) { return (function(){ '"$prologue"
         cat "$src"
-        echo "$epilogue"'});'
+        echo "$epilogue"'}); });'
     } >"$out"
 }
 convert-AMD-coffee() {
-    local src=$1 out=$2 outDir=$3
+    local src=$1 out=$2
+    case $out in */) out+=$(basename "$src") ;; esac
+    local outDir=${3:-$(dirname "$out")}
     echo >&2 "Converting to AMD $out from $src..."
     rm -f "$out"
     {
