@@ -27,6 +27,7 @@ set -eu
 compile-coffee() {
     local src=$1 out=$2
     local outDir=${3:-$(dirname "$out")}
+    [[ "$src" -nt "$out" ]] || return 0
     echo >&2 "Compiling $out from $src..."
     coffee -m -o "$outDir" -c "$src"
 }
@@ -35,6 +36,7 @@ compile-coffee() {
 compile-less() {
     local src=$1 out=$2
     local outDir=${3:-$(dirname "$out")}
+    [[ "$src" -nt "$out" ]] || return 0
     echo >&2 "Compiling $out from $src..."
     lessc "$src" "$out"
 }
@@ -44,6 +46,7 @@ convert-AMD-js() {
     local src=$1 out=$2
     case $out in */) out+=$(basename "$src") ;; esac
     local outDir=${3:-$(dirname "$out")} prologue=${4:-} epilogue=${5:-}
+    [[ "$src" -nt "$out" ]] || return 0
     echo >&2 "Converting to AMD $out from $src..."
     rm -f "$out"
     {
@@ -56,6 +59,7 @@ convert-AMD-coffee() {
     local src=$1 out=$2
     case $out in */) out+=$(basename "$src") ;; esac
     local outDir=${3:-$(dirname "$out")}
+    [[ "$src" -nt "$out" ]] || return 0
     echo >&2 "Converting to AMD $out from $src..."
     rm -f "$out"
     {
@@ -65,3 +69,10 @@ convert-AMD-coffee() {
     } >"$out"
 }
 
+minify-js() {
+    local src=$1 out=$2
+    local outDir=${3:-$(dirname "$out")}
+    [[ "$src" -nt "$out" ]] || return 0
+    echo >&2 "Minifying $out from $src..."
+    uglifyjs "$src" -o "$out" -m -c
+}
