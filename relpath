@@ -11,6 +11,7 @@
 
 use strict;
 use File::Spec;
+use Cwd 'abs_path';
 
 my $base;
 if (@ARGV < 1) {
@@ -22,6 +23,7 @@ if (@ARGV < 1) {
     $base = '';
 }
 
+my $base_abs = abs_path($base);
 for my $p (@ARGV) {
-    printf "%s\n", File::Spec->abs2rel(File::Spec->rel2abs($p), $base);
+    printf "%s\n", File::Spec->abs2rel(abs_path($p), $base_abs);
 }
