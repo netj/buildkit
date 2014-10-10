@@ -173,6 +173,25 @@ install: $(PACKAGE)
 	@tar xzf $< -C $(PREFIX)
 endif
 
+ifdef GITHUB_REPO
+release-LATEST:
+	## BuildKit: releasing $(PACKAGE_LATEST) to GitHub
+	-git tag --delete LATEST
+	$(MAKE) package
+	upload-github-release-asset \
+	file=$(PACKAGE_LATEST) \
+	repo=$(GITHUB_REPO) \
+	tag=LATEST
+	git tag --delete LATEST
+	## BuildKit: released $(PACKAGE_LATEST) to GitHub
+release-v$(PACKAGEVERSION): $(PACKAGE)
+	## BuildKit: releasing $(PACKAGE) to GitHub
+	upload-github-release-asset \
+	file=$(PACKAGE) \
+	repo=$(GITHUB_REPO) \
+	tag=$(PACKAGEVERSION)
+	## BuildKit: released $(PACKAGE) to GitHub
+endif
 
 ifdef APPEXECUTES
 ifeq ($(shell uname),Darwin)
