@@ -186,7 +186,6 @@ release-LATEST:
 	file=$(PACKAGE_LATEST) \
 	repo=$(GITHUB_REPO) \
 	tag=LATEST
-	git tag --delete LATEST
 	## BuildKit: released $(PACKAGE_LATEST) to GitHub
 release-v$(PACKAGEVERSION): $(PACKAGE)
 	## BuildKit: releasing $(PACKAGE) to GitHub
