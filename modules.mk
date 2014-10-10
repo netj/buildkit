@@ -303,6 +303,7 @@ shell/$(SHELL_NAME):
 	@mkdir -p $(SHELL_MODULEPATH)
 	cd "$(SHELL_MODULEPATH)" && { \
 	    echo '@@dot@@=.'; \
+	    echo '@@PROJECTNAME@@=$(PROJECTNAME)'; \
 	    echo '@@APPNAME@@=$(APPNAME)'; \
 	    echo '@@PACKAGENAME@@=$(PACKAGENAME)'; \
 	    echo '@@RUNTIMEDEPENDSDIR@@=$(RUNTIMEDEPENDSDIR)'; \
@@ -313,3 +314,18 @@ shell/$(SHELL_NAME):
 	    echo '@@SHELL_ENVVARPREFIX@@=$(SHELL_ENVVARPREFIX)'; \
 	} | customize "$(realpath $(BUILDKIT)/template.shell)"
 
+# version and build information
+$(STAGEDIR)/.build-info.sh: stage
+	# Generating $@
+	@{ \
+	    echo 'version=$(shell git describe --tags)'; \
+	    echo 'version_long=$(shell git describe --tags --long)'; \
+	    echo 'version_commit=$(shell git rev-parse HEAD)$(shell $(BUILDKIT)/determine-package-version | cut -b 7-)'; \
+	    echo 'build_timestamp=$(shell date +%FT%T%z | sed 's/\(.*\)\([0-9][0-9]\)/\1:\2/')'; \
+	    echo 'build_os=$(shell uname)'; \
+	    echo 'build_os_release=$(shell uname -r)'; \
+	    echo 'build_os_version='"'$(shell uname -v)'"; \
+	    echo 'build_machine=$(shell uname -m)'; \
+	    echo 'build_hostname=$(shell hostname -f)'; \
+	} >$@
+$(POLISHED): $(STAGEDIR)/.build-info.sh
