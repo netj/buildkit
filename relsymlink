@@ -13,7 +13,7 @@ Target=$1; shift
 Symlink=$1
 
 if [ -d "$Symlink" -a ! -L "$Symlink" ]; then
-    Symlink="${Symlink%/}/"
+    Symlink="${Symlink%/}/$(basename "$Target")"
 fi
 
 exec ln -sfn "$(relpath "${Symlink%/*}" "$Target")" "$Symlink"
