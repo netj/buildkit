@@ -54,13 +54,13 @@ watch-filesystem-events .  "*/.git" "*/.git/*" \
     # parent directories are detected instead.  Therefore, we need to translate
     # directory events back to those for actual files contained in it.
     while read event abspath; do
-        if [ -d "$abspath" ]; then
+        if [[ -d "$abspath" ]]; then
             case $event in
                 modified)
                     # find which file is modified in the directory
                     for f in "$abspath"/{,.}*; do
-                        ! [ -d "$f" ] || continue
-                        ! [ "$f" -ot "$abspath" ] || continue
+                        ! [[ -d "$f" ]] || continue
+                        ! [[ "$f" -ot "$abspath" ]] || continue
                         #msg "# interpreting instead as modified ${f#$SRCROOT/}"
                         abspath=$f
                         break
@@ -97,7 +97,7 @@ watch-filesystem-events .  "*/.git" "*/.git/*" \
     # track module modifications from individual file events
     cd "$BUILDDIR"
     reload-module-map() {
-        [ watch.modules -ot modules ] || return 0
+        [[ watch.modules -ot modules ]] || return 0
         msg "## loading module map"
         eval "$(
             echo 'which-module() {'
@@ -116,7 +116,7 @@ watch-filesystem-events .  "*/.git" "*/.git/*" \
     }
     rm -f watch.modules; reload-module-map
     while read -t 1800 -r event abspath; do
-        ! [ -L "$abspath" ] || continue
+        ! [[ -L "$abspath" ]] || continue
         abspath="$(cd "$(dirname "$abspath")" && pwd -P)/$(basename "$abspath")"
         case $abspath in
             "$BUILDKIT"@(|/*)) continue ;;
@@ -156,7 +156,7 @@ watch-filesystem-events .  "*/.git" "*/.git/*" \
             p=$abspath
             case $event in
                 modified|created)
-                    [ -e "$p" ] || p=$(most-recently-modified-files \
+                    [[ -e "$p" ]] || p=$(most-recently-modified-files \
                         "$(dirname "$p")" -maxdepth 1 | head -n 1)
                     ;;
                 deleted|moved|*)
@@ -164,7 +164,7 @@ watch-filesystem-events .  "*/.git" "*/.git/*" \
                     ;;
             esac
             l=timestamp/"$module".lastmodified
-            if [ "$p" -nt "$l" ]; then
+            if [[ "$p" -nt "$l" ]]; then
                 ld=$(dirname "$l")
                 relpath="$(relpath "$ld" "$p")"
                 mkdir -p "$ld"
@@ -178,4 +178,35 @@ watch-filesystem-events .  "*/.git" "*/.git/*" \
 ) &
 
 # record PGID
-ps -o pgid= -p "$!" | tr -d ' ' >"$pid"
+pgid=$(ps -o pgid= -p "$!" | tr -d ' ' | tee "$pid")
+set -- $(ps -o pid=,args= -g $pgid | grep watch-filesystem-events)
+pidWatchFSE=$1
+set --
+
+# launch a CPU% monitor to shutdown the incremental modification tracking and
+# switch to a full scan on next build
+MAX_PROCS=10
+HIGH_PCPU=100
+PCPU_CHECK_INTERVAL=5
+MAX_TIMES_HIGH_PCPU=4
+timesHighPcpu=0
+while sleep $PCPU_CHECK_INTERVAL
+    pcpuWatchFSE=$(ps -o pcpu= -p $pidWatchFSE)
+    pcpus=($(ps -o pcpu= -g $pgid))
+    numProcs=${#pcpus[@]}
+    [[ $numProcs -gt 0 ]]
+do
+    pcpusSum=$(bc <<<"0 ${pcpus[*]/#/+}")
+    pcpuWatchFSE=${pcpuWatchFSE%.*}
+    if [[ $pcpuWatchFSE -gt $HIGH_PCPU ]]; then
+        let ++timesHighPcpu
+    else
+        timesHighPcpu=0
+    fi
+    #echo "WATCH PERF CHECK numProcs=$numProcs pcpusSum=$pcpusSum"
+    if [[ $numProcs -gt $MAX_PROCS ||
+            $timesHighPcpu -gt $MAX_TIMES_HIGH_PCPU ]]; then
+        kill -TERM -$pgid
+        msg "### stop tracking for too many file modifications: consuming $pcpusSum% cpu by $numProcs processes"
+    fi
+done &

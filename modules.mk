@@ -73,7 +73,8 @@ stage:
 	@$(MAKE) STAGING=yes $@
 
 # Watch module modifications, or simply invalidate previous timestamps
-watch_files := $(shell \
+define _BUILDKIT_WATCH_MODIFICATIONS
+$(shell \
     mkdir -p $(BUILDDIR) $(STAGEDIR); \
     PATH=$(PATH) \
     BUILDKIT=$(realpath $(BUILDKIT)) \
@@ -81,9 +82,12 @@ watch_files := $(shell \
     STAGEDIR=$(realpath $(STAGEDIR)) \
     $(BUILDKIT)/watch-modifications \
 )
+endef
+watch_files := $(_BUILDKIT_WATCH_MODIFICATIONS)
 
 build:
 	### BuildKit: built all modules
+	$(_BUILDKIT_WATCH_MODIFICATIONS)
 
 endif # STAGING
 
