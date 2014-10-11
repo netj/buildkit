@@ -18,7 +18,7 @@ declare -- "$@"
 ${file:?to upload required} \
 ${repo:?owning the release required} \
 ${tag:?or name of the release required} \
-${ASSET_HISTORY_ROOT:=.github-$tag-assets/} \
+${ASSET_HISTORY_ROOT:=.github-release-assets/} \
 #
 
 # look for OAuth token
@@ -65,11 +65,11 @@ trap 'rm -rf "$tmp"' EXIT
 
 # figure out the release id (hitting cache first)
 releaseId=$(
-releaseIdFile="$ASSET_HISTORY_ROOT"/releaseId
+releaseIdFile="$ASSET_HISTORY_ROOT/$repo/$tag/releaseId"
 if [[ -s "$releaseIdFile" ]]; then
     cat "$releaseIdFile"
 else
-    mkdir -p "$ASSET_HISTORY_ROOT"
+    mkdir -p "$(dirname "$releaseIdFile")"
     githubAPI GET /repos/$repo/releases |
     coffeeInputJSON '
         [tag] = argv
@@ -109,9 +109,9 @@ for a in res when a.name is filename
 ' "$file" |
 while read assetId; do
     # keeping a record of it before deleting
-    mkdir -p "$ASSET_HISTORY_ROOT"
-    githubAPI GET /repos/$repo/releases/assets/$assetId \
-        >"$ASSET_HISTORY_ROOT"/$file-$assetId.json
+    assetHistoryFile="$ASSET_HISTORY_ROOT/$repo/$tag/$file-$assetId.json"
+    mkdir -p "$(dirname "$assetHistoryFile")"
+    githubAPI GET /repos/$repo/releases/assets/$assetId >"$assetHistoryFile"
     githubAPI DELETE /repos/$repo/releases/assets/$assetId
 done
 
