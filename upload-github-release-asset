@@ -43,7 +43,7 @@ PATH=$(cd "$(dirname "$0")" && pwd -P)/deps:"$PATH"
 
 error() { echo >&2 "$@"; false; }
 curlGitHub() {
-    curl --silent -u "$GITHUB_OAUTH_BASIC" "$@"
+    curl --silent --show-error --user "$GITHUB_OAUTH_BASIC" "$@"
 }
 githubAPI() {
     local method=$1; shift
