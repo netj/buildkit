@@ -289,7 +289,7 @@ gitclean:
 
 # generate some useful files to be used with BuildKit
 APPNAME ?= *
-.gitignore .lvimrc:
+.gitignore .vimrc:
 	cd "$(BUILDKIT)"/template && { \
 	    echo '@@dot@@=.'; \
 	    echo '@@APPNAME@@=$(APPNAME)'; \
