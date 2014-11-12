@@ -187,7 +187,10 @@ release-LATEST:
 	repo=$(GITHUB_REPO) \
 	tag=LATEST
 	## BuildKit: released $(PACKAGE_LATEST) to GitHub
-release-v$(PACKAGEVERSION): $(PACKAGE)
+release-%: PACKAGEVERSION=$*
+release-%:
+	git tag --force $(PACKAGEVERSION)
+	$(MAKE) PACKAGEVERSION=$(PACKAGEVERSION) $(PACKAGE)
 	## BuildKit: releasing $(PACKAGE) to GitHub
 	upload-github-release-asset \
 	file=$(PACKAGE) \
