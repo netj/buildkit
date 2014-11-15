@@ -6,7 +6,8 @@
 export LC_ALL=C
 find "$@" -print0 | xargs -0 python -c '
 import sys
-from os.path import getmtime
+from os.path import exists, getmtime
 for f in sys.argv[1:]:
-    print "%f\t%s" % (getmtime(f), f)
+    if exists(f):
+        print "%f\t%s" % (getmtime(f), f)
 ' | sort -nr -k1,1 | cut -f2-
