@@ -20,7 +20,7 @@ custom-fetch() {
     default-fetch
     # patch after fetching source tree
     patchesName=${patchesURL##*/}
-    fetch-verify "$patchesURL" "\$patchesName" \
+    fetch-verify "\$patchesName" "$patchesURL" \
         sha1sum=$patches_sha1sum md5sum=$patches_md5sum
     cd "$name-$version"
     patch -p0 <../"\$patchesName"

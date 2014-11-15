@@ -53,7 +53,7 @@ mkdir -p "$prefix"
 
 # fetch source if necessary and prepare for build
 default-fetch() {
-    fetch-verify "$url" "$tarball" \
+    fetch-verify "$tarball" "$url" \
         ${sha1sum:+sha1sum=$sha1sum} ${md5sum:+md5sum=$md5sum}
     case $ext in
         *.tar.xz)

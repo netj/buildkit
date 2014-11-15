@@ -2,6 +2,9 @@
 # Fetch file from a remote URL and verify its hash sum
 # Usage:
 # > fetch-verify FILENAME URL [sha1sum=SHA1SUM] [md5sum=MD5SUM]
+# 
+# SHA1SUM and MD5SUM may be URLs to a file that contains the checksum of the
+# file to download and verify.
 #
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2013-11-05
@@ -12,8 +15,8 @@ set -eu
     exit 2
 }
 
-URL=$1; shift
 File=$1; shift
+URL=$1; shift
 [ $# -eq 0 ] || declare "$@"
 filename=$(basename "$File")
 
@@ -22,11 +25,11 @@ case $URL in
     http://www.apache.org/dyn/closer.cgi*)
         case $File in *.html) ;; *)
             # The Apache dyn/closer.cgi gives an HTML page with a list of URLs to mirrors
-            "$0" "$URL" "$File".html
+            "$0" "$File".html "$URL"
             # We take the first URL and fetch-verify it instead
             URL=$(grep "http://.*/$File" "$File".html | head -1 | sed -e 's/.*href="//; s/".*//')
             rm -f "$File".html
-            exec "$0" "$URL" "$File" "$@"
+            exec "$0" "$File" "$URL" "$@"
         esac
 esac
 
