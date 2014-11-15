@@ -7,8 +7,7 @@ version=${DEPENDS_ON_MONGO_VERSION:-2.4.9}
 self=$0
 name=`basename "$0" .sh`
 
-prefix="$(pwd -P)"/prefix
-mkdir -p "$prefix"
+mkdir -p prefix
 
 arch=$(uname -m)
 os=$(uname -s)
@@ -18,15 +17,11 @@ case $os in
 esac
 
 # download and extract MongoDB binary distribution for the machine
-tarball="mongodb-$os-$arch-${version}.tgz"
+fullname="mongodb-$os-$arch-${version}"
+tarball="${fullname}.tgz"
 [ -s "$tarball" ] ||
     curl -C- -RLO "http://fastdl.mongodb.org/$os/$tarball"
-tar xf "$tarball" -C "$prefix"
-cd "$prefix"/"${tarball%.tgz}"
+tar xf "$tarball" -C prefix
 
-# place symlinks for commands to $DEPENDS_PREFIX/bin/
-mkdir -p "$DEPENDS_PREFIX"/bin
-for x in bin/*; do
-    [ -x "$x" ] || continue
-    relsymlink "$x" "$DEPENDS_PREFIX"/bin/
-done
+# place symlinks for commands under $DEPENDS_PREFIX/bin/
+symlink-under-depends-prefix bin -x prefix/"$fullname"/bin/*

@@ -7,8 +7,6 @@ version=${DEPENDS_ON_NODE_VERSION:-v0.10.26}
 self=$0
 name=`basename "$0" .sh`
 
-prefix="$(pwd -P)"/prefix
-
 download() {
     local url=$1; shift
     local file=$1; shift
@@ -43,11 +41,11 @@ fi
 
 if [ -n "$os" -a -n "$arch" ]; then
     # download binary distribution
-    tarball="node-${version}-${os}-${arch}.tar.gz"
+    fullname="node-${version}-${os}-${arch}"
+    tarball="${fullname}.tar.gz"
     download "http://nodejs.org/dist/${version}/$tarball" "$tarball"
-    mkdir -p "$prefix"
-    tar xf "$tarball" -C "$prefix"
-    cd "$prefix/${tarball%.tar.gz}"
+    mkdir -p prefix
+    tar xf "$tarball" -C prefix
 else
     # download source and build
     # first, look for the latest version of python
@@ -60,20 +58,15 @@ else
         exit 2
     fi
     # download the source
-    tarball="node-${version}.tar.gz"
+    fullname="node-${version}"
+    tarball="${fullname}.tar.gz"
     download "http://nodejs.org/dist/${version}/$tarball" "$tarball"
     tar xf "$tarball"
     cd "./${tarball%.tar.gz}"
     # configure and build
     $python ./configure --prefix="$prefix"
     make -j $(nproc 2>/dev/null) install PORTABLE=1
-    cd "$prefix"
 fi
 
-
-# place symlinks for commands to $DEPENDS_PREFIX/bin/
-mkdir -p "$DEPENDS_PREFIX"/bin
-for x in bin/*; do
-    [ -x "$x" ] || continue
-    relsymlink "$x" "$DEPENDS_PREFIX"/bin/
-done
+# place symlinks for commands under $DEPENDS_PREFIX/bin/
+symlink-under-depends-prefix bin -x prefix/"$fullname"/bin/*

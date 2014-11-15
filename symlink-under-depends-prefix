@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Install symlinks to given files under a certain location in $DEPENDS_PREFIX
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2014-11-14
+set -eu
+
+: ${DEPENDS_PREFIX:?This command is intended to be used only in scripts that work with check-depends of BuildKit}
+
+# under where in $DEPENDS_PREFIX?
+Subdir=$1; shift
+TestPredicate=$1; shift
+
+# place symlinks for commands to $DEPENDS_PREFIX/$Subdir
+mkdir -p "$DEPENDS_PREFIX"/"$Subdir"
+for f; do
+    [ $TestPredicate "$f" ] || continue
+    relsymlink "$f" "$DEPENDS_PREFIX"/"$Subdir"/
+done
