@@ -35,13 +35,19 @@ for sum in sha1sum md5sum; do
     sumUrl=${!sum:-}
     case $sumUrl in
         http://*|https://*)
-            value=$(curl -sS "$sumUrl" || wget -qO- "$sumUrl")
-            if ! [[ ${#value} -eq 40 && $sum = sha1sum ||
-                    ${#value} -eq 32 && $sum = md5sum ]]; then
+            case $sum in
+                sha1sum) len=40 ;;
+                 md5sum) len=32 ;;
+            esac
+            # find checksum lines from the contents of the URL
+            value=$({ curl -sS "$sumUrl" || wget -qO- "$sumUrl"
+                    } | grep '[0-9a-fA-F]\{'$len'\}')
+            if ! [[ ${#value} -eq $len ]]; then
+                # unless the contents is exactly the length of the checksum,
+                # find the lines that mention the file name
                 value=$(
                     grep -F "$filename" <<<"$value" |
-                    sed -n '/[0-9a-fA-F]\{32,40\}/ s/.*\([0-9a-fA-F]\{32,40\}\).*/\1/p' |
-                    head -1
+                    sed 's/.*\([0-9a-fA-F]\{'$len'\}\).*/\1/'
                 )
             fi
             declare "$sum=$value"
@@ -61,13 +67,15 @@ fileOK() {
     if [ -s "$File" ]; then
         fileOK=true # assume file is okay unless it's known to be corrupt
         for hashType in sha1sum shasum md5sum md5; do
-            hash=${!hashType:-}
-            [[ -n "$hash" ]] && type "$hashType" &>/dev/null || continue
-            fileOK=false # assume corrupted when we got a hash sum that can be checked
-            if "$hashType" <"$File" | grep -qF "$hash"; then
-                fileOK=true # and until we found a correct hash sum
-                break
-            fi
+            for hash in ${!hashType:-}; do
+                [[ -n "$hash" ]] && type "$hashType" &>/dev/null || continue
+                fileOK=false # assume corrupted when we got a hash sum that can be checked
+                if "$hashType" <"$File" | grep -qF "$hash"; then
+                    fileOK=true # and until we found a correct hash sum
+                    break
+                fi
+                ! $fileOK || break
+            done
         done
     fi
     $fileOK
