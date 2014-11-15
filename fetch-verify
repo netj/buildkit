@@ -15,8 +15,41 @@ set -eu
 URL=$1; shift
 File=$1; shift
 [ $# -eq 0 ] || declare "$@"
+filename=$(basename "$File")
+
+# special case URLs
+case $URL in
+    http://www.apache.org/dyn/closer.cgi*)
+        case $File in *.html) ;; *)
+            # The Apache dyn/closer.cgi gives an HTML page with a list of URLs to mirrors
+            "$0" "$URL" "$File".html
+            # We take the first URL and fetch-verify it instead
+            URL=$(grep "http://.*/$File" "$File".html | head -1 | sed -e 's/.*href="//; s/".*//')
+            rm -f "$File".html
+            exec "$0" "$URL" "$File" "$@"
+        esac
+esac
+
+# expand any URL for check sums
+for sum in sha1sum md5sum; do
+    sumUrl=${!sum:-}
+    case $sumUrl in
+        http://*|https://*)
+            value=$(curl -sS "$sumUrl" || wget -qO- "$sumUrl")
+            if ! [[ ${#value} -eq 40 && $sum = sha1sum ||
+                    ${#value} -eq 32 && $sum = md5sum ]]; then
+                value=$(
+                    grep -F "$filename" <<<"$value" |
+                    sed -n '/[0-9a-fA-F]\{32,40\}/ s/.*\([0-9a-fA-F]\{32,40\}\).*/\1/p' |
+                    head -1
+                )
+            fi
+            declare "$sum=$value"
+    esac
+done
+
 tag=${sha1sum:-${md5sum:-}}
-cached="${TMPDIR:-/tmp}/buildkit-$USER/cache/${tag:+${tag}.}$(basename "$File")"
+cached="${BUILDKIT_CACHE_DIR:=${TMPDIR:-/tmp}/buildkit-$USER/cache}/${tag:+${tag}.}$filename"
 cachedir=$(dirname "$cached")
 
 # aliases for checking hash sums
