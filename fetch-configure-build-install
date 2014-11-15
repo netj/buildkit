@@ -108,5 +108,5 @@ fi
 
 cd "$prefix"
 
-[ $# -gt 0 ] || set -- bin/ bin/*
-place-depends-symlinks "$@"
+[ $# -gt 0 ] || set -- bin -x bin/*
+symlink-under-depends-prefix "$@"
