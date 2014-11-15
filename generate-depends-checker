@@ -14,8 +14,8 @@ Prefix=${3:-}
 
 # include a shell (bash) script
 embed-script() {
-    local sh=$1
-    echo "  bash -c $(sh-escape <"$sh") \"\$DEPENDSDIR\"/$(sh-escape "$(basename "$sh")")"
+    local sh=$1; shift
+    echo "  bash $* -c $(sh-escape <"$sh") \"\$DEPENDSDIR\"/$(sh-escape "$(basename "$sh")")"
 }
 
 
@@ -83,7 +83,7 @@ while read -r dep; do
         echo "  mkdir -p $depDirEsc"
         echo "  cd $depDirEsc"
         echo '  rm -f .prepared'
-        embed-script "$sh"
+        embed-script "$sh" -eu
         echo '  c=$?'
         echo '  [ $c -ne 0 ] || touch .prepared'
         echo '  exit $c'
