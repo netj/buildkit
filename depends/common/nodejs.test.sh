@@ -17,10 +17,12 @@ while [[ -n "$vTail" && -n "$vTailHere" ]]; do
     vHead=${vTail%%.*}    vHeadHere=${vTailHere%%.*}
     vTail=${vTail#$vHead} vTailHere=${vTailHere#$vHeadHere}
     vTail=${vTail#.}      vTailHere=${vTailHere#.}
-    [[ $vHead -ge $vHeadHere ]] || {
+    if [[ $vHead -lt $vHeadHere ]]; then
+        break
+    elif [[ $vHead -gt $vHeadHere ]]; then
         echo >&2 "nodejs >= $version not found"
         false
-    }
+    fi
 done
 
 true
