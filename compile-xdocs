@@ -9,43 +9,51 @@ set -eu
 
 [[ $# -gt 0 ]] || set -- /dev/stdin
 
-{
-echo '#!/bin/sh'
-echo 'set -eu'
 for input; do
+    ! [[ -e "$input" ]] || continue
+    echo >&2 "$input: No such file"
+    exit 2
+done
+
+for input; do
+{
+    echo -n ": "$input"; "
+    echo -n 'set -eu; '
     case $input in
         /dev/stdin) output=             wd=.                   ;;
         *.in)       output=${input%.in} wd=$(dirname "$input") ;;
         *)          output="$input".out wd=$(dirname "$input") ;;
     esac
     # compile each file into a shell script
-    echo '('
-    echo "cd '"${wd//\'/\'\\\'\'}"'"
-    echo 'set +e'
+    [[ -z "$output" ]] ||
+        echo -n "exec >'"${output//\'/\'\\\'\'}"'; "
+    echo -n "cd '"${wd//\'/\'\\\'\'}"'; "
+    echo -n 'set +e; '
     perl <"$input" -Mstrict -e '
         sub echo {
             for my $s (@_) {
                 my $t = $s;
                 $t =~ s/'\''/'\''\\'\'''\''/g;
-                printf "printf %%s '\''%s'\''\n", $t;
+                printf "printf %%s '\''%s'\''; ", $t;
             }
         }
         my $md = join "", <>;
         while ($md =~ /(.*?)<\$(.*?)\$>|(.*)$/sg) {
             if (defined $2) { echo($1);
                 my $code = $2;
-                if ($code =~ /^=\s*(.*)/) { printf "printf %%s %s\n", $1; }
-                else { print $code, "\n"; }
+                if ($code =~ /^=\s*(.*)/) { printf "printf %%s %s; ", $1; }
+                else {
+                    print $code, " ";
+                    # TODO add tests for these corner cases
+                    print ";" unless $code =~ /([\r\n]|(do|then|else|\{|\(|for|while|until|if|elif)\s*)$/;
+                }
             }
             elsif ($3 ne "") { echo($3); }
         }
     '
-    echo -n ')'
-    [[ -z "$output" ]] ||
-        echo " >'"${output//\'/\'\\\'\'}"'"
-done
 } |
   if [ -n "${DRYRUN:-}" ]; then cat
-elif [ -n "${DEBUG:-}"  ]; then bash -x
-else                            bash
+elif [ -n "${DEBUG:-}"  ]; then exec -a "$input" bash -x -s
+else                            exec -a "$input" bash -s
 fi
+done
