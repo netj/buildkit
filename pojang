@@ -80,19 +80,34 @@ drvlen=`sed -ne '/<<DRV$/,/^DRV/p' <"$0" | wc -l | tr -d " "`
 {
 # begin with the pojang driver
 cat <<DRV
-#!/bin/sh -e
+#!/bin/sh
 # $PACKAGENAME self-extracting executable
-d=/tmp/$PACKAGENAME-\$USER/$PACKAGEID
-[ -e \$d.o ] || {
-    mkdir -p \$d; tail -n +$drvlen "\$0" | gzip -dq | tar xpf - -C \$d
-    o=\$d/$EndMarker
-    [ -e \$o ] || { echo "\$0: package corrupt" >&2; exit 255; }
-    rm -f \$o; touch \$d.o
+for t in "\${TMPDIR:-}" /var/tmp /tmp; do
+    [ -d "\$t" ] || continue
+    d="\$t"/$PACKAGENAME-\$USER/$PACKAGEID
+    ! [ -e "\$d".o ] || break
+done
+[ -e "\$d".o ] || {
+for t in "\${TMPDIR:-}" /var/tmp /tmp; do
+    [ -d "\$t" ] || continue
+    d="\$t"/$PACKAGENAME-\$USER/$PACKAGEID
+    mkdir -p "\$d" || continue
+    tail -n +$drvlen "\$0" | gzip -dq | tar xpf - -C "\$d"
+    o="\$d"/$EndMarker
+    [ -e "\$o" ] || { echo "\$0: package is corrupt" >&2; exit 255; }; rm -f "\$o"
+    touch "\$d".o
+    ! [ -e "\$d".o ] || break
+done
+[ -e "\$d".o ] || {
+    echo "\$0: cannot extract contents"
+    echo "Set TMPDIR= environment to a writable path with enough free space."
+    exit 128
+} >&2
 }
 POJANG_ORIGINAL_COMMAND=\$0 \\
-exec \$d/$Entry "\$@"
+exec "\$d"/$Entry "\$@"
 DRV
-echo "# end of pojang driver (https://github.com/netj/BuildKit), content follows:"
+echo "# end of pojang driver (https://github.com/netj/buildkit), content follows:"
 
 # and the tar archive follows
 (
