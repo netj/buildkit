@@ -28,7 +28,7 @@ compile() {
     for s; do
         [[ -e "$s" ]] || continue
         local sDir=$(dirname "$s")
-        local outDir=$(printf "$out" "$sDir")
+        local outDir=$(printf "${out:-%s}" "$sDir")
         mkdir -p "$outDir"
         if [ -n "$src" ]; then
             local srcDir=$(printf "$src" "$sDir")
