@@ -2,6 +2,19 @@
 # compile-xdocs -- Compile executable documents that embed arbitrary commands
 #                  between <$ and $> into a shell script that generates the
 #                  resulting documents that contain the output of the commands.
+# 
+# Environment variables:
+#   EXPAND_PARAMETERS
+#     When set to non-empty value, expands strings like `$foo` or `${bar}`
+#     in addition to <$ ... $>.
+# 
+#   DEBUG
+#     When set to non-empty value, prints what command is running to stderr
+#     by setting `set -x`.
+# 
+#   DRYRUN
+#     When set to non-empty value, only prints the shell script that will run
+#     to stdout, instead of actually running it.
 #
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2013-11-20
@@ -34,6 +47,9 @@ for input; do
             for my $s (@_) {
                 my $t = $s;
                 $t =~ s/'\''/'\''\\'\'''\''/g;
+            '"$([[ -z "${EXPAND_PARAMETERS:-}" ]] || echo '
+                $t =~ s/(\$(?:[A-Za-z_]\w*|\{[^\}]+\}))/'\''"$1"'\''/g;
+            ')"'
                 printf "printf %%s '\''%s'\''; ", $t;
             }
         }
@@ -52,8 +68,8 @@ for input; do
         }
     '
 } |
-  if [ -n "${DRYRUN:-}" ]; then cat
-elif [ -n "${DEBUG:-}"  ]; then exec -a "$input" bash -x -s
-else                            exec -a "$input" bash -s
+  if [[ -n "${DRYRUN:-}" ]]; then cat
+elif [[ -n "${DEBUG:-}"  ]]; then exec -a "$input" bash -x -s
+else                              exec -a "$input" bash -s
 fi
 done
