@@ -61,7 +61,7 @@ for input; do
                 else {
                     print $code, " ";
                     # TODO add tests for these corner cases
-                    print ";" unless $code =~ /([\r\n]|(do|then|else|\{|\(|for|while|until|if|elif)\s*)$/;
+                    print ";" unless $code =~ /([\r\n]\s*|(do|then|else|\{|\(|for|while|until|if|elif)\s*)$/;
                 }
             }
             elsif ($3 ne "") { echo($3); }
