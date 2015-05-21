@@ -66,7 +66,7 @@ for Module; do
             [[ $dst != /* ]] || dst=.$dst       # no absolute paths
             dst=${dst//@(+(\/)|\/.\/)//}        # no repeated slashes, or /./
             dst=${dst#./}                       # no ./ prefix
-            dstdir="\$(STAGEDIR)/${dst%/*}/"
+            dstdir="\$(STAGEDIR)/${dst%/*}"
             dstpath=$dst
             # make explicit whether source is a directory or not in its name
             if [[ $src = */ || -d "$Module/$src" ]]; then
@@ -75,16 +75,17 @@ for Module; do
             fi
             # generate staging rule
             echo "\$(STAGED): \$(STAGEDIR)/$dst"
-            echo "\$(STAGEDIR)/$dst: $Module/$srcname $dstdir"
             case $src in
                 */) # a directory
                     # TODO is it better if we make rules for individual files under $src/?
+                    echo "\$(STAGEDIR)/$dst: $Module/$srcname"
                     echo "	mkdir -p \$@"
                     echo "	$(stageDir "\$</." "\$@/")"
                     echo "# XXX always copying since Make doesn't know if files are changed inside a directory or not"
                     echo ".PHONY: \$(STAGEDIR)/$dst"
                     ;;
                 *) # a file
+                    echo "\$(STAGEDIR)/$dst: $Module/$srcname $dstdir"
                     echo "	$(stageFile "\$<" "\$@")"
                     ;;
             esac
@@ -108,7 +109,7 @@ if [[ ${#dstdirs[@]} -gt 0 ]]; then
     echo "# Directories"
     printf '%s\n' "${dstdirs[@]}" | awk '!a[$0]++ {print}' |
     while read dstdir; do
-        dstpath=".${dstdir#\$(STAGEDIR)}"
+        dstpath=".${dstdir#\$(STAGEDIR)}/"
         if grep -qxF "$dstpath" <"$BUILDDIR"/stage.contents; then
             echo "#$dstdir: # custom rule creation exists"
         else
