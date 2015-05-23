@@ -15,7 +15,10 @@
 #   ln -sfnv ../buildkit/depends/common/bats.sh       .depends/
 
 $(TESTED): $(patsubst %,$(BUILDDIR)/timestamp/%.tested,\
-    $(wildcard tests/*.bats $(MODULES:%=%/tests/*.bats)))
+    $(wildcard test/*.bats $(MODULES:%=%/test/*.bats)))
+
+# prefix command for running BATS
+TEST_THROUGH ?=
 
 BINDIR ?= bin
 $(BUILDDIR)/timestamp/%.bats.tested: %.bats $(POLISHED)
@@ -24,6 +27,7 @@ trap 'rm -rf "$$tmpdir"' EXIT && cd "$$tmpdir" && \
 PATH='$(realpath $(STAGEDIR))/$(BINDIR)':"$$PATH" \
 SRCROOT='$(SRCROOT)' \
 TESTROOT='$(realpath $(<D))' \
+$(TEST_THROUGH) \
 bats $(realpath $<) \
 # Running test: $*.bats
 	@mkdir -p $(@D) && touch $@
