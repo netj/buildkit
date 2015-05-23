@@ -155,9 +155,6 @@ $(PACKAGE): polish
 	@$(DO_SYMLINK_PACKAGE_LATEST)
 	### BuildKit: packaged as $(PACKAGE)
 
-# we want to do create the package everytime
-all: package
-
 install: $(PACKAGE)
 	### BuildKit: installing at $(PREFIX)/bin/$(PACKAGENAME)
 	@mkdir -p $(PREFIX)/bin
