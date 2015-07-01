@@ -48,7 +48,10 @@ for input; do
                 my $t = $s;
                 $t =~ s/'\''/'\''\\'\'''\''/g;
             '"$([[ -z "${EXPAND_PARAMETERS:-}" ]] || echo '
-                $t =~ s/(\$(?:[A-Za-z_]\w*|\{[^\}]+\}))/'\''"$1"'\''/g;
+                # expand $foo, ${foo}, \\$foo, but not \$foo or \\\$foo
+                $t =~ s/((?:[^\\]|^)(?:\\\\)*)(\$(?:[A-Za-z_]\w*|\{[^\}]+\}))/$1'\''"$2"'\''/g;  # recognized parameter expansions
+                $t =~ s/((?:[^\\]|^)(?:\\\\)*)\\\$/$1\$/g;  # expand escaped dollar sign
+                $t =~ s/\\\\/\\/g; # expand all escaped backslashes
             ')"'
                 printf "printf %%s '\''%s'\''; ", $t;
             }
