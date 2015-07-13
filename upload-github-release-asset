@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# upload-github-release-asset -- A script that uploads release asset to GitHub
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-10-10
 set -eu
 
 canProceed=true
