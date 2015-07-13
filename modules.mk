@@ -339,15 +339,5 @@ shell/$(SHELL_NAME):
 # version and build information
 $(STAGEDIR)/.build-info.sh: stage
 	# Generating $@
-	@{ \
-	    echo 'version=$(shell git describe --tags)'; \
-	    echo 'version_long=$(shell git describe --tags --long)'; \
-	    echo 'version_commit=$(shell git rev-parse HEAD)$(shell $(BUILDKIT)/determine-package-version | cut -b 7-)'; \
-	    echo 'build_timestamp=$(shell date +%FT%T%z | sed 's/\(.*\)\([0-9][0-9]\)/\1:\2/')'; \
-	    echo 'build_os=$(shell uname)'; \
-	    echo 'build_os_release=$(shell uname -r)'; \
-	    echo 'build_os_version='"'$(shell uname -v)'"; \
-	    echo 'build_machine=$(shell uname -m)'; \
-	    echo 'build_hostname=$(shell hostname -f)'; \
-	} >$@
+	@generate-build-info.sh >$@
 $(POLISHED): $(STAGEDIR)/.build-info.sh
