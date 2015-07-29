@@ -31,7 +31,7 @@ done
 for input; do
 {
     echo -n ": "$input"; "
-    echo -n 'set -eu; '
+    echo -n 'set -e; '
     case $input in
         /dev/stdin) output=             wd=.                   ;;
         *.in)       output=${input%.in} wd=$(dirname "$input") ;;
