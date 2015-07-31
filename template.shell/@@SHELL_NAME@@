@@ -68,7 +68,8 @@ if [ -z "${@@SHELL_ENVVARPREFIX@@_HOME:-}" ]; then
 fi
 
 # make sure everything we need is available
-"$@@SHELL_ENVVARPREFIX@@_HOME"/depends/check-runtime-depends-once
+! [ -x "$@@SHELL_ENVVARPREFIX@@_HOME"/depends/check-runtime-depends-once ] ||
+    "$@@SHELL_ENVVARPREFIX@@_HOME"/depends/check-runtime-depends-once
 
 
 # Process options
