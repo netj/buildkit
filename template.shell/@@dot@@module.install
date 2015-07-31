@@ -1,5 +1,6 @@
 @@SHELL_NAME@@                  @@SHELL_BINDIR@@/
 @@SHELL_NAME@@-hack             @@SHELL_RUNTIMEDIR@@/
+@@SHELL_NAME@@-help             @@SHELL_RUNTIMEDIR@@/
 @@SHELL_NAME@@-version          @@SHELL_RUNTIMEDIR@@/
 error                           @@SHELL_RUNTIMEDIR@@/
 usage                           @@SHELL_RUNTIMEDIR@@/

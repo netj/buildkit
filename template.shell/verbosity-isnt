@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # verbosity-isnt -- Check if $@@SHELL_ENVVARPREFIX@@_LOGLVL is in range
-# 
-# > verbosity-isnt LEVEL...
 #
-# Author: Jaeho Shin <netj@cs.stanford.edu>
-# Created: 2013-03-08
+# > verbosity-isnt LEVEL...
+##
+# Template-Author: Jaeho Shin <netj@cs.stanford.edu>
+# Template-Created: 2013-03-08
+# Generated: @@GENERATED_TIMESTAMP@@
 (( @@SHELL_ENVVARPREFIX@@_LOGLVL += 1 - $SHLVL ))
 for l; do [[ $@@SHELL_ENVVARPREFIX@@_LOGLVL -ne $l ]] || exit 1; done
 exit 0

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # @@SHELL_NAME@@-version -- show @@SHELL_NAME@@'s version and build information
 # > @@SHELL_NAME@@ version
-#
-# Author: Jaeho Shin <netj@cs.stanford.edu>
-# Created: 2014-10-09
+##
+# Template-Author: Jaeho Shin <netj@cs.stanford.edu>
+# Template-Created: 2014-10-09
 # Generated: @@GENERATED_TIMESTAMP@@
 set -eu
 

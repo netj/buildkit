@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # error -- Show error message
-#
-# Author: Jaeho Shin <netj@ropas.snu.ac.kr>
-# Created: 2010-07-28
+##
+# Template-Author: Jaeho Shin <netj@ropas.snu.ac.kr>
+# Template-Created: 2010-07-28
+# Generated: @@GENERATED_TIMESTAMP@@
 before= after=
 if [[ -t 2 ]] && ${@@SHELL_ENVVARPREFIX@@_COLOR:-true}; then
     # TODO check terminal's color support
