@@ -8,7 +8,7 @@ cd .build
 # compile a runtime dependency checker
 mkdir -p ../runtime runtime
 rsync -rlH ../runtime/ --exclude=*.{commands,paths,test.sh,sh,txt} runtime/ --delete
-generate-depends-checker ../runtime "Missing dependency: " "3X " >runtime/.check
+generate-depends-checker ../runtime "Missing dependency: " "$PACKAGENAME " >runtime/.check
 chmod +x runtime/.check
 
 # prepare dependencies to be bundled
@@ -17,19 +17,19 @@ prepdir=bundled.prep
 prepdirpath="$(pwd -P)"/"$prepdir"
 rm -rf "$bundledir"
 mkdir -p ../bundled "$bundledir" "$prepdir"/.all
-rsync -rlH ../bundled/ --exclude=/*.{commands,paths,{{test,bundle}.,}sh} "$prepdir"/ #--delete
+rsync -rlH ../bundled/ --exclude=/*/{commands,paths,{test,bundle,install}.sh} "$prepdir"/ --copy-unsafe-links #--delete
 without-comments ../bundle.conf |
 while read -r dep; do
     echo "# Preparing to bundle dependency $dep"
     prepared="$prepdir/$dep"
-    relsymlink ../bundled/"$dep".sh "$prepared".sh
+    relsymlink ../bundled/"$dep"/install.sh "$prepared"/install.sh
     ## XXX sharing build deps with bundled runtime deps may break since
     ##     $DEPENDS_PREFIX isn't handled correctly.  We need to separate
     ##     build/install of each dependency first.
     ## reuse prepared dependency if available
-    #if [ -L ../bundled/"$dep".sh ]; then
+    #if [ -L ../bundled/"$dep" ]; then
     #    # find out where the prep script comes from
-    #    origin="$(dirname "$(readlink ../bundled/"$dep".sh)")/$dep"
+    #    origin="$(dirname "$(readlink ../bundled/"$dep")")/$dep"
     #    if [ -e "$origin" ]; then
     #        # make sure it's clear to place a symlink
     #        ! [ -e "$prepared" ] || rm -rf "$prepared"
@@ -44,10 +44,10 @@ while read -r dep; do
     {
         echo '
         prepared="$DEPENDSDIR/'"$dep"'"
-        [ -d "$prepared" -a "$prepared"/.prepared -nt "$prepared".sh ]
+        [ -d "$prepared" -a "$prepared"/.prepared -nt "$prepared"/install.sh ]
         '
-    } >"$prepared".test.sh
-    chmod +x "$prepared".test.sh
+    } >"$prepared"/test.sh
+    chmod +x "$prepared"/test.sh
 done
 generate-depends-checker "$prepdir" "# Building to bundle, " "# Building to bundle, " |
 tee check-depends.sh |
@@ -58,7 +58,7 @@ DEPENDS_PREFIX="$prepdirpath/.all" \
 # then, bundle only the necessary files from each dependency
 without-comments ../bundle.conf |
 while read -r dep; do
-    bundle=../bundled/"$dep".bundle.sh
+    bundle=../bundled/"$dep"/bundle.sh
     if [ -x "$bundle" ]; then
         echo "# Using custom bundling rule for dependency $dep"
         "$bundle" "$prepdir/$dep"/ "$bundledir/$dep"/

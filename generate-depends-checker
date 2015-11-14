@@ -29,20 +29,20 @@ trap 'rm -rf "$tmp"' EXIT
     enumerate() {
         if [ $# -gt 0 ]; then
             local files=() name=
-            for name; do files+=("$name".{commands,paths,test.sh}); done
+            for name; do files+=("$name"/{commands,paths,test.sh}); done
             set -- "${files[@]}"
         else
-            set -- *.{commands,paths,test.sh}
+            set -- */{commands,paths,test.sh}
         fi
         ls "$@" 2>/dev/null |
-        sed 's/\.commands$//; s/\.paths$//; s/\.test\.sh$//;'
+        sed 's:/commands$::; s:/paths$::; s:/test\.sh$::;'
     }
     enumerate | sort -u |
     while read -r dep; do
-        without-comments "$dep".depends |
+        without-comments "$dep"/depends |
         while read -r depdep; do
             if ! [ $(enumerate "$depdep" | wc -l) -gt 0 ]; then
-                echo >&2 "$DEPENDSDIR/${dep}.depends: ${depdep}: No such dependency definition"
+                echo >&2 "$DEPENDSDIR/${dep}/depends: ${depdep}: No such dependency definition"
                 touch $tmp/error
             fi
             echo "$depdep" "$dep"
@@ -69,13 +69,13 @@ while read -r dep; do
     echo "### checking dependency $dep"
 
     # define path for dependency specifications
-    dep() { echo "$DEPENDSDIR/$dep.$1"; }
+    dep() { echo "$DEPENDSDIR/$dep/$1"; }
 
     # define how to prepare the dependency when not found
     echo 'prepare-dependency() {'
     echo '  local c=1'
     # run shell script if exists
-    sh=$(dep sh)
+    sh=$(dep install.sh)
     if [ -r "$sh" ]; then
         echo "  msg 'preparing dependency $dep'"
         depDirEsc=$(sh-escape "$DEPENDSDIR/$dep")
@@ -92,7 +92,7 @@ while read -r dep; do
     fi
     # TODO brew/apt-get/yum install based on uname
     # show instruction if exists
-    desc=$(dep txt)
+    desc=$(dep instruction.txt)
     if [ -r "$desc" ]; then
         echo -n "   echo >&2 "; sh-escape <"$desc"
     fi
