@@ -69,7 +69,7 @@ fileOK() {
     local fileOK=false
     if [ -s "$File" ]; then
         fileOK=true # assume file is okay unless it's known to be corrupt
-        for hashType in sha1sum shasum md5sum md5; do
+        for hashType in sha256sum sha1sum shasum md5sum md5; do
             for hash in ${!hashType:-}; do
                 [[ -n "$hash" ]] && type "$hashType" &>/dev/null || continue
                 fileOK=false # assume corrupted when we got a hash sum that can be checked
@@ -85,10 +85,12 @@ fileOK() {
 }
 fileOK ||
     { cp -f "$cached" "$File"                                 && fileOK; } ||
-    { curl --continue-at - --location --output "$File" "$URL" && fileOK; } ||
-    { curl --location --output "$File" "$URL"                 && fileOK; } ||
+    { curl --continue-at - --location --fail --output "$File" "$URL" && fileOK; } ||
+    { curl --location --fail --output "$File" "$URL"                 && fileOK; } ||
     { wget --continue --output-document="$File" "$URL"        && fileOK; } ||
-    { wget --output-document="$File" "$URL"                   && fileOK; }
+    { wget --output-document="$File" "$URL"                   && fileOK; } ||
+    { echo >&2 "Cannot fetch $URL as $File"                   && fileOK; }
+
 
 # cache for later (not critical)
 set +e
