@@ -25,7 +25,7 @@ custom-fetch() {
     fetch-verify "\$patchesName" "$patchesURL" \
         sha1sum=$patches_sha1sum md5sum=$patches_md5sum
     cd "$name-$version"
-    patch -p1 <../"\$patchesName"
+    patch -f -p1 <../"\$patchesName"
 }
 custom-install() { make install-strip; }
 END
