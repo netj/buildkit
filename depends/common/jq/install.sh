@@ -3,7 +3,7 @@
 # See: http://stedolan.github.io/jq/download/
 set -eu
 
-version=1.5rc2
+version=1.5
 
 self=$0
 name=`basename "$0" .sh`
@@ -14,18 +14,23 @@ fullname=jq-${version}
 case $(uname) in
     Linux)
         fetch-verify jq \
-            https://github.com/stedolan/jq/releases/download/$fullname/jq-linux-x86_64 \
-            sha1sum=ec498ea174ab4e696d02016e2ad47fbdec2b3aa3
+            https://github.com/stedolan/jq/releases/download/$fullname/jq-linux64 \
+            sha1sum=d8e36831c3c94bb58be34dd544f44a6c6cb88568 \
+            md5sum=6a342dbb17b2f2ea4ec0e64d2157614d \
+            #
         ;;
 
     Darwin)
         fetch-verify jq \
-            https://github.com/stedolan/jq/releases/download/$fullname/jq-osx-x86_64 \
-            sha1sum=b5ac856d9f900bd65a56862685851bf86b2f4a19
+            https://github.com/stedolan/jq/releases/download/$fullname/jq-osx-amd64 \
+            sha1sum=51ed5abdd7dfe778850c9d86521c53fe23ee89f1 \
+            md5sum=81ff0e3ddd999d2f5bd151b882ce7e18 \
+            #
         ;;
 
     *)
         echo >&2 "$(uname): prebuilt jq executable not available"
+        # TODO build from source
         false
 esac
 
