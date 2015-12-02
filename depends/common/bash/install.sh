@@ -26,7 +26,7 @@ custom-fetch() {
         sha1sum=$patches_sha1sum md5sum=$patches_md5sum
     if [[ "\$patchesName" -nt "\$patchesName".patched ]]; then
         cd "$name-$version"
-        patch -f -p1 <../"\$patchesName"
+        patch -f -p1 <../"\$patchesName" || true
         touch ../"\$patchesName".patched
     fi
 }
