@@ -15,59 +15,56 @@ chmod +x runtime/.check
 bundledir=bundled
 prepdir=bundled.prep
 prepdirpath="$(pwd -P)"/"$prepdir"
-rm -rf "$bundledir"
-mkdir -p ../bundled "$bundledir" "$prepdir"/.all
+sigdir=bundled.sig
+rm -rf "$sigdir"
+mkdir -p ../bundled "$bundledir" "$prepdir"/.all "$sigdir"
+# analyze a signature of each dependency's recipe
+rsync -rlH ../bundled/ --exclude=/*/{commands,paths,{test,bundle,install}.sh} "$sigdir"/ --copy-unsafe-links
+without-comments ../bundle.conf |
+while read -r dep; do
+    relsymlink ../bundled/"$dep"/install.sh "$sigdir"/"$dep"/install.sh
+    # use git-hash-object(1) to build a signature of the recipe for bundling the dependency
+    find ../bundled/"$dep" -type f | git hash-object --stdin-paths |
+    git hash-object --stdin >"$prepdir"/"$dep"/signature
+done
+# prepare the scripts
 rsync -rlH ../bundled/ --exclude=/*/{commands,paths,{test,bundle,install}.sh} "$prepdir"/ --copy-unsafe-links #--delete
 without-comments ../bundle.conf |
 while read -r dep; do
-    echo "# Preparing to bundle dependency $dep"
     prepared="$prepdir/$dep"
-    relsymlink ../bundled/"$dep"/install.sh "$prepared"/install.sh
-    ## XXX sharing build deps with bundled runtime deps may break since
-    ##     $DEPENDS_PREFIX isn't handled correctly.  We need to separate
-    ##     build/install of each dependency first.
-    ## reuse prepared dependency if available
-    #if [ -L ../bundled/"$dep" ]; then
-    #    # find out where the prep script comes from
-    #    origin="$(dirname "$(readlink ../bundled/"$dep")")/$dep"
-    #    if [ -e "$origin" ]; then
-    #        # make sure it's clear to place a symlink
-    #        ! [ -e "$prepared" ] || rm -rf "$prepared"
-    #        # point to the originally prepared dependency directory
-    #        relsymlink "$origin" "$prepared"
-    #    fi
-    #fi
-    # remove any dangling symlinks that may remain because of the above reuse
-    if [ -L "$prepared" -a ! -e "$prepared" ]; then
-        rm -f "$prepared"
-    fi
+    rm -f "$prepared"/{test,install}.sh
+    signature=$(cat "$prepared"/signature)
     {
         echo '
         prepared="$DEPENDSDIR/'"$dep"'"
-        [ -d "$prepared" -a "$prepared"/.prepared -nt "$prepared"/install.sh ]
+        [ -d "$prepared" -a x"$(cat "$prepared"/.prepared)" = x"'"$signature"'" ]
         '
     } >"$prepared"/test.sh
     chmod +x "$prepared"/test.sh
+    {
+        sh-escape echo "# Bundling dependency $dep ($signature)"
+        # first, use the install script for building the dependency
+        cat ../bundled/"$dep"/install.sh
+        # then, add how to bundle only the necessary files from what's built
+        pathFromPrepToBundle="$(relpath "$prepdir/$dep" "$bundledir/$dep")/"
+        bundle=../bundled/"$dep"/bundle.sh
+        if [ -x "$bundle" ]; then
+            sh-escape echo "# Using custom bundling rule for dependency $dep"
+            ln -sfn "$bundle" .
+            sh-escape ./bundle.sh ./ "$pathFromPrepToBundle"/
+        else
+            sh-escape echo "# Bundling everything prepared under prefix for dependency $dep"
+            sh-escape rsync -aH ./prefix "$pathFromPrepToBundle"/ --delete
+        fi
+        echo "echo $signature >.prepared"
+    } >"$prepared"/install.sh
 done
-generate-depends-checker "$prepdir" "# Building to bundle, " "# Building to bundle, " |
+generate-depends-checker "$prepdir" "# Building to bundle, " "# Bundling existing build, " |
 tee check-depends.sh |
 DEPENDSDIR="$prepdirpath" \
 DEPENDS_PREFIX="$prepdirpath/.all" \
     bash -eu
 
-# then, bundle only the necessary files from each dependency
-without-comments ../bundle.conf |
-while read -r dep; do
-    bundle=../bundled/"$dep"/bundle.sh
-    if [ -x "$bundle" ]; then
-        echo "# Using custom bundling rule for dependency $dep"
-        "$bundle" "$prepdir/$dep"/ "$bundledir/$dep"/
-    else
-        echo "# Bundling everything prepared under prefix for dependency $dep"
-        rsync -aH "$prepdir/$dep"/prefix "$bundledir/$dep"/ --delete
-    fi
-done
-
-# and the ones to be exposed
+# bundle the ones to be exposed
 rsync -aH "$prepdir"/.all "$bundledir"/ --delete
 

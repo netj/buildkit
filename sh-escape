@@ -22,7 +22,7 @@ if [ $# -gt 0 ]; then
                 echo -n "${first:+ }$arg"
                 ;;
             *)
-                echo -n "${first:+ }'"${arg//\'/\'\\\'\'}"'"
+                echo -n "${first:+ }'${arg//\'/\'\\\'\'}'"
                 ;;
         esac
         first=no
