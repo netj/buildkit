@@ -15,16 +15,13 @@ chmod +x runtime/.check
 bundledir=bundled
 prepdir=bundled.prep
 prepdirpath="$(pwd -P)"/"$prepdir"
-sigdir=bundled.sig
-rm -rf "$sigdir"
-mkdir -p ../bundled "$bundledir" "$prepdir"/.all "$sigdir"
+mkdir -p ../bundled "$bundledir" "$prepdir"/.all
 # analyze a signature of each dependency's recipe
-rsync -rlH ../bundled/ --exclude=/*/{commands,paths,{test,bundle,install}.sh} "$sigdir"/ --copy-unsafe-links
 without-comments ../bundle.conf |
 while read -r dep; do
-    relsymlink ../bundled/"$dep"/install.sh "$sigdir"/"$dep"/install.sh
     # use git-hash-object(1) to build a signature of the recipe for bundling the dependency
-    find ../bundled/"$dep" -type f | git hash-object --stdin-paths |
+    mkdir -p "$prepdir"/"$dep"
+    find -L ../bundled/"$dep" -type f | git hash-object --stdin-paths |
     git hash-object --stdin >"$prepdir"/"$dep"/signature
 done
 # prepare the scripts
