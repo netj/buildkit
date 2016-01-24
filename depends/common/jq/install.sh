@@ -37,7 +37,7 @@ esac
 # install it to the usual place
 chmod +x jq
 mkdir -p prefix/"$fullname"/bin
-ln -f jq prefix/"$fullname"/bin/
+install jq prefix/"$fullname"/bin/
 
 # place symlinks for commands under $DEPENDS_PREFIX/bin/
 symlink-under-depends-prefix bin -x prefix/"$fullname"/bin/*
