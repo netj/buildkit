@@ -20,6 +20,7 @@ xargs <"$BUILDDIR"/modules -I{}  rm -f "$BUILDDIR"/timestamp/{}.lastmodified
 # abort if we don't have watchdog Python module (See: https://pypi.python.org/pypi/watchdog)
 python -c 'from watchdog.observers import *' &>/dev/null || {
     rm -f "$BUILDDIR"/stage.mk
+    false # XXX suppressing the noise below as this watch-modifications will be no longer stay the default in the future
     echo '# WARNING: BuildKit is unable monitor modifications to your modules!!'
     echo '# '
     echo '# For faster and correct incremental builds, install Python watchdog package:'

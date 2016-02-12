@@ -76,7 +76,7 @@ stage:
 define _BUILDKIT_WATCH_MODIFICATIONS
 $(shell \
     mkdir -p $(BUILDDIR) $(STAGEDIR); \
-    PATH=$(PATH) \
+    PATH="$(PATH)" \
     BUILDKIT=$(realpath $(BUILDKIT)) \
     BUILDDIR=$(realpath $(BUILDDIR)) \
     STAGEDIR=$(realpath $(STAGEDIR)) \
