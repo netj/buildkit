@@ -12,7 +12,14 @@ url=http://pkgs.fedoraproject.org/repo/pkgs/graphviz/graphviz-${version}.tar.gz/
 sha1sum=$sha1sum
 md5sum=$md5sum
 custom-configure() {
-    default-configure --disable-tcl --without-x
+    default-configure \
+        --enable-silent-rules \
+        --disable-dependency-tracking \
+        --enable-fast-install \
+        --without-x \
+        --disable-swig --enable-swig=no \
+        --disable-tcl \
+        #
 }
 custom-install() {
     # don't install docs and data, just the executable binaries
