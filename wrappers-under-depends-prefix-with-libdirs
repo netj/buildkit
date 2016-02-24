@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Install wrapper scripts to given files that satisfy TEST_PREDICATE under DESTDIR of $DEPENDS_PREFIX
+# Usage: wrappers-under-depends-prefix-with-libdirs LIBDIR[:LIBDIR]... DESTDIR TEST_PREDICATE FILE...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2016-02-23
+set -eu
+
+: ${DEPENDS_PREFIX:?This command is intended to be used only in scripts that work with check-depends of BuildKit}
+: ${DEPENDS_TARGET_UNAME:=$(uname)}
+
+LibDirs=$1; shift
+DestDir=$1; shift
+TestPredicate=$1; shift
+
+# make sure we have DESTDIR under $DEPENDS_PREFIX
+mkdir -p "$DEPENDS_PREFIX"/"$DestDir"
+
+libdirs=()
+IFS=: libdirs_given=($LibDirs)
+for libdir in "${libdirs_given[@]}"; do
+    [[ -d "$libdir" ]] || continue
+    libdirs+=("$(relpath "$DEPENDS_PREFIX"/"$DestDir"/. "$libdir")")
+done
+
+if [[ ${#libdirs[@]} -gt 0 ]]; then
+    # create wrappers that set up necessary environment
+    case $DEPENDS_TARGET_UNAME in
+        Darwin)
+            wrapper_header() {
+                echo '#!/usr/bin/env bash'
+                echo 'set -eu'
+                echo 'here=${0%/*}'
+                IFS=: echo "export DYLD_LIBRARY_PATH=${libdirs[*]/#/'"$here"/'}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"
+            }
+            ;;
+
+        *) # Linux and other Unixes
+            wrapper_header() {
+                echo '#!/usr/bin/env bash'
+                echo 'set -eu'
+                echo 'here=${0%/*}'
+                IFS=: echo "export LD_LIBRARY_PATH=${libdirs[*]/#/'"$here"/'}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+            }
+    esac
+    for f; do
+        dest="$DEPENDS_PREFIX/$DestDir/${f##*/}"
+        rm -f "$dest"
+        {
+            wrapper_header
+            echo 'exec "$here"/'"$(sh-escape "$(relpath "$DEPENDS_PREFIX"/"$DestDir"/. "$f")")"' "$@"'
+        } >"$dest"
+        chmod +x "$dest"
+    done
+else
+    # just place symlinks to $DEPENDS_PREFIX/DESTDIR
+    exec symlink-under-depends-prefix "$DestDir" "$TestPredicate" "$@"
+fi

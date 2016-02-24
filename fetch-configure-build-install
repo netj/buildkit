@@ -108,5 +108,6 @@ fi
 
 cd "$prefix"
 
-[ $# -gt 0 ] || set -- bin -x bin/*
-symlink-under-depends-prefix "$@"
+# TODO wrap
+[ $# -gt 0 ] || set -- lib bin -x bin/*
+wrappers-under-depends-prefix-with-libdirs "$@"

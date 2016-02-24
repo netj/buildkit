@@ -68,5 +68,5 @@ else
     make -j $(nproc 2>/dev/null) install PORTABLE=1
 fi
 
-# place symlinks for commands under $DEPENDS_PREFIX/bin/
-symlink-under-depends-prefix bin -x prefix/"$fullname"/bin/*
+# place wrappers or symlinks for commands under $DEPENDS_PREFIX/bin/
+wrappers-under-depends-prefix-with-libdirs prefix/"$fullname"/lib bin -x prefix/"$fullname"/bin/*

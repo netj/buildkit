@@ -17,5 +17,5 @@ fetch-verify $tarball \
 mkdir -p prefix
 tar xf "$tarball" -C prefix
 
-# place symlinks for commands under $DEPENDS_PREFIX/bin/
-symlink-under-depends-prefix bin -x prefix/"$fullname"/bin/*
+# place wrappers or symlinks for commands under $DEPENDS_PREFIX/bin/
+wrappers-under-depends-prefix-with-libdirs prefix/"$fullname"/lib bin -x prefix/"$fullname"/bin/*
