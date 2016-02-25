@@ -13,15 +13,57 @@ LibDirs=$1; shift
 DestDir=$1; shift
 TestPredicate=$1; shift
 
+# find all matching files
+files=()
+for file; do
+    [ $TestPredicate "$file" ] || continue
+    files+=("$file")
+done
+[[ ${#files[@]} -gt 0 ]] || {
+    echo >&2 "No given files satisfy test $TestPredicate"
+    false
+}
+
+IFS=: eval 'libdirs_given=($LibDirs)'
+libdirs_found=()
+if [[ ${#libdirs_given[@]} -gt 0 ]]; then
+    # refine the list of libdirs to relevant subdirs
+    libdirs_found=(
+        $(enumerate-shared-libraries-required-by "${files[@]}" |
+            sed 's:/[^/]*$::' | sort -u |
+            grep -Ff <(for libdir in "${libdirs_given[@]}"; do
+                [[ -d "$libdir" ]] || continue
+                (cd "$libdir" && pwd)
+            done) || true
+        )
+    )
+    echo "# Found ${#libdirs_found[@]} shared library directories"
+    [[ ${#libdirs_found[@]} -eq 0 ]] || printf '%s\n' "${libdirs_found[@]}"
+    # install rest of the shared libraries to the first given libdirs
+    libdir_rest="${libdirs_given[0]}"/bundled
+    mkdir -p "$libdir_rest"
+    echo "# Bundling extra shared libraries to $libdir_rest"
+    enumerate-shared-libraries-required-by "${files[@]}" |
+        grep -vFf <([[ ${#libdirs_found[@]} -eq 0 ]] ||
+            printf '%s\n' "${libdirs_found[@]}") |
+        xargs install -v --target-directory="$libdir_rest"
+    # don't leave empty libdir we just created causing unnecessary wrappers below
+    rmdir "$libdir_rest" 2>/dev/null || true
+    # make sure this is included in the libdirs_found
+    ! [[ -d "$libdir_rest" ]] || libdirs_found+=("$libdir_rest")
+fi
+
 # make sure we have DESTDIR under $DEPENDS_PREFIX
 mkdir -p "$DEPENDS_PREFIX"/"$DestDir"
 
+# find all existing libdirs
 libdirs=()
-IFS=: libdirs_given=($LibDirs)
-for libdir in "${libdirs_given[@]}"; do
-    [[ -d "$libdir" ]] || continue
-    libdirs+=("$(relpath "$DEPENDS_PREFIX"/"$DestDir"/. "$libdir")")
-done
+if [[ ${#libdirs_found[@]} -gt 0 ]]; then
+    for libdir in "${libdirs_found[@]}"; do
+        [[ -d "$libdir" ]] || continue
+        libdirs+=("$(relpath "$DEPENDS_PREFIX"/"$DestDir"/. "$libdir")")
+    done
+fi
 
 if [[ ${#libdirs[@]} -gt 0 ]]; then
     # create wrappers that set up necessary environment
@@ -30,8 +72,8 @@ if [[ ${#libdirs[@]} -gt 0 ]]; then
             wrapper_header() {
                 echo '#!/usr/bin/env bash'
                 echo 'set -eu'
-                echo 'here=${0%/*}'
-                IFS=: echo "export DYLD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"
+                echo 'here=${0%/*} name=${0##*/}'
+                IFS=: eval 'echo "export DYLD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"'
             }
             ;;
 
@@ -40,10 +82,12 @@ if [[ ${#libdirs[@]} -gt 0 ]]; then
                 echo '#!/usr/bin/env bash'
                 echo 'set -eu'
                 echo 'here=${0%/*} name=${0##*/}'
-                IFS=: echo "export LD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+                IFS=: eval 'echo "export LD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"'
             }
     esac
-    for f; do
+    depends_prefix_relpath=$(relpath "$DEPENDS_PREFIX/$DestDir")
+    echo "# Generating wrapper executables to load shared libraries in: ${libdirs[*]}"
+    for f in "${files[@]}"; do
         dest="$DEPENDS_PREFIX/$DestDir/${f##*/}"
         rm -f "$dest"
         {
@@ -51,8 +95,9 @@ if [[ ${#libdirs[@]} -gt 0 ]]; then
             echo 'exec "$here"/'"$(sh-escape "$(relpath "$DEPENDS_PREFIX"/"$DestDir"/. "${f%/*}")")"'/"$name" "$@"'
         } >"$dest"
         chmod +x "$dest"
+        echo "$depends_prefix_relpath/${f##*/}: wrapped"
     done
 else
     # just place symlinks to $DEPENDS_PREFIX/DESTDIR
-    exec symlink-under-depends-prefix "$DestDir" "$TestPredicate" "$@"
+    exec symlink-under-depends-prefix "$DestDir" "$TestPredicate" "${files[@]}"
 fi
