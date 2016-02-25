@@ -23,7 +23,18 @@ case $(uname) in
         sort -u
         ;;
 
-    # TODO Darwin)
+    Darwin)
+        otool -L "$@" |
+        # clean up otool's output and leave just the absolute path names
+        sed '
+            /^[[:space:]]/!d
+            s/^[[:space:]]*//
+            s/[[:space:]]*(.*)$//
+        ' |
+        # exclude some non-portable/standard system libraries
+        grep -v /usr/lib |
+        sort -u
+        ;;
 
     *)
         echo >&2 "$(uname): unsupported OS for enumerating shared libraries for $*"
