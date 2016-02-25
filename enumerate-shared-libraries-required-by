@@ -20,7 +20,7 @@ case $(uname) in
             lib{c,m,gcc_s,stdc++,pthread,dl,rt} \
             #
         ) |
-        sort -u
+        sort -u || true
         ;;
 
     Darwin)
@@ -33,7 +33,7 @@ case $(uname) in
         ' |
         # exclude some non-portable/standard system libraries
         grep -v /usr/lib |
-        sort -u
+        sort -u || true
         ;;
 
     *)
