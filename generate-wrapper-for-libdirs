@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# generate-wrapper-for-libdirs -- Generates a wrapper script that sets up necessary environment for shared libraries in given libdirs
+# $ generate-wrapper-for-libdirs WRAPPER_SCRIPT_PATH TARGET_EXECUTABLE_PATH LD_LIBRARY_DIR...
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2016-02-25
+set -euo pipefail
+
+: ${DEPENDS_TARGET_UNAME:=$(uname)}
+
+Wrapper=$1; shift
+Target=$1; shift
+# rest of the arguments are libdirs
+
+rm -f "$Wrapper"
+{
+    case $DEPENDS_TARGET_UNAME in
+        Darwin) # OS X
+            echo '#!/usr/bin/env bash'
+            echo 'set -eu'
+            echo 'here=${0%/*} name=${0##*/}'
+            IFS=: eval 'echo "export DYLD_LIBRARY_PATH=${*/#/\"\$here\"/}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"'
+            ;;
+
+        *) # Linux and other Unixes
+            echo '#!/usr/bin/env bash'
+            echo 'set -eu'
+            echo 'here=${0%/*} name=${0##*/}'
+            IFS=: eval 'echo "export LD_LIBRARY_PATH=${*/#/\"\$here\"/}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"'
+    esac
+    echo 'exec -a "$name" "$here"/'"$(sh-escape "$(relpath "${Wrapper%/*}"/. "$Target")")"' "$@"'
+} >"$Wrapper"
+chmod +x "$Wrapper"

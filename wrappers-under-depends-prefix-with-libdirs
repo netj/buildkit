@@ -66,35 +66,11 @@ if [[ ${#libdirs_found[@]} -gt 0 ]]; then
 fi
 
 if [[ ${#libdirs[@]} -gt 0 ]]; then
-    # create wrappers that set up necessary environment
-    case $DEPENDS_TARGET_UNAME in
-        Darwin)
-            wrapper_header() {
-                echo '#!/usr/bin/env bash'
-                echo 'set -eu'
-                echo 'here=${0%/*} name=${0##*/}'
-                IFS=: eval 'echo "export DYLD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"'
-            }
-            ;;
-
-        *) # Linux and other Unixes
-            wrapper_header() {
-                echo '#!/usr/bin/env bash'
-                echo 'set -eu'
-                echo 'here=${0%/*} name=${0##*/}'
-                IFS=: eval 'echo "export LD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"'
-            }
-    esac
     depends_prefix_relpath=$(relpath "$DEPENDS_PREFIX/$DestDir")
     echo "# Generating wrapper executables to load shared libraries in: ${libdirs[*]}"
     for f in "${files[@]}"; do
         dest="$DEPENDS_PREFIX/$DestDir/${f##*/}"
-        rm -f "$dest"
-        {
-            wrapper_header
-            echo 'exec "$here"/'"$(sh-escape "$(relpath "$DEPENDS_PREFIX"/"$DestDir"/. "${f%/*}")")"'/"$name" "$@"'
-        } >"$dest"
-        chmod +x "$dest"
+        generate-wrapper-for-libdirs "$dest" "$f" "${libdirs[@]}"
         echo "$depends_prefix_relpath/${f##*/}: wrapped"
     done
 else
