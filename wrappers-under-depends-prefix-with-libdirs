@@ -46,7 +46,7 @@ if [[ ${#libdirs_given[@]} -gt 0 ]]; then
     enumerate-shared-libraries-required-by "${files[@]}" |
         grep -vFf <([[ ${#libdirs_found[@]} -eq 0 ]] ||
             printf '%s\n' "${libdirs_found[@]}") |
-        xargs install -v --target-directory="$libdir_rest"
+        xargs_ install -v --target-directory="$libdir_rest"
     # don't leave empty libdir we just created causing unnecessary wrappers below
     rmdir "$libdir_rest" 2>/dev/null || true
     # make sure this is included in the libdirs_found

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# xargs_ -- a portable wrapper for xargs
+#  mainly to cope with different behavior of BSD and GNU xargs on empty input
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2016-02-25
+set -eu
+
+if xargs --no-run-if-empty </dev/null &>/dev/null; then
+    # XXX GNU extension
+    exec xargs --no-run-if-empty "$@"
+else
+    # BSD does not run anything by default on empty input
+    exec xargs "$@"
+fi

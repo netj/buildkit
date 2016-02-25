@@ -8,4 +8,4 @@ set -euo pipefail
 DestDir="$1"; shift
 mkdir -p "$DestDir"
 enumerate-shared-libraries-required-by "$@" |
-xargs install -v --target-directory="$DestDir"
+xargs_ install -v --target-directory="$DestDir"
