@@ -12,6 +12,8 @@ url=https://launchpad.net/$name/${version%.*}/$version/+download/$name-$version$
 sha1sum=$sha1sum
 md5sum=$md5sum
 custom-configure() { :; }
-custom-build() { default-build LDFLAGS=-static; }
-custom-install() { default-install PREFIX="\$prefix"; }
+custom-install() {
+    default-install PREFIX="\$prefix"
+    install-shared-libraries-required-by "\$prefix"/lib "\$prefix"/bin/*
+}
 END

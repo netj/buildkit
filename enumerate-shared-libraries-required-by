@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# enumerate-shared-libraries-required-by -- Enumerates all shared libraries required by given executables
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2016-02-24
+set -euo pipefail
+
+case $(uname) in
+    Linux)
+        ldd "$@" |
+        # clean up ldd's output and leave just the absolute path names
+        sed '
+            /^\t/!d; s/^\t//; /not a dynamic executable/d
+            s/.* =>[[:space:]]*//; s/(.*$//
+            /^$/d
+        ' |
+        # exclude some standard/non-portable system libraries
+        grep -vf <(printf '%s\.so\n' \
+            'ld-linux.*' \
+            lib{c,m,gcc_s,stdc++,pthread,dl,rt} \
+            #
+        ) |
+        sort -u
+        ;;
+
+    # TODO Darwin)
+
+    *)
+        echo >&2 "$(uname): unsupported OS for enumerating shared libraries for $*"
+esac

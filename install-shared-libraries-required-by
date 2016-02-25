@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# install-shared-libraries-required-by -- Copies all shared libraries required by given executables
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2016-02-24
+set -euo pipefail
+
+DestDir="$1"; shift
+mkdir -p "$DestDir"
+enumerate-shared-libraries-required-by "$@" | xargs install -v --target-directory="$DestDir"
