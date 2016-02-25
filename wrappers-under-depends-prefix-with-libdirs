@@ -31,7 +31,7 @@ if [[ ${#libdirs[@]} -gt 0 ]]; then
                 echo '#!/usr/bin/env bash'
                 echo 'set -eu'
                 echo 'here=${0%/*}'
-                IFS=: echo "export DYLD_LIBRARY_PATH=${libdirs[*]/#/'"$here"/'}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"
+                IFS=: echo "export DYLD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"
             }
             ;;
 
@@ -40,7 +40,7 @@ if [[ ${#libdirs[@]} -gt 0 ]]; then
                 echo '#!/usr/bin/env bash'
                 echo 'set -eu'
                 echo 'here=${0%/*}'
-                IFS=: echo "export LD_LIBRARY_PATH=${libdirs[*]/#/'"$here"/'}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+                IFS=: echo "export LD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
             }
     esac
     for f; do
