@@ -39,7 +39,7 @@ if [[ ${#libdirs[@]} -gt 0 ]]; then
             wrapper_header() {
                 echo '#!/usr/bin/env bash'
                 echo 'set -eu'
-                echo 'here=${0%/*}'
+                echo 'here=${0%/*} name=${0##*/}'
                 IFS=: echo "export LD_LIBRARY_PATH=${libdirs[*]/#/\"\$here\"/}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
             }
     esac
@@ -48,7 +48,7 @@ if [[ ${#libdirs[@]} -gt 0 ]]; then
         rm -f "$dest"
         {
             wrapper_header
-            echo 'exec "$here"/'"$(sh-escape "$(relpath "$DEPENDS_PREFIX"/"$DestDir"/. "$f")")"' "$@"'
+            echo 'exec "$here"/'"$(sh-escape "$(relpath "$DEPENDS_PREFIX"/"$DestDir"/. "${f%/*}")")"'/"$name" "$@"'
         } >"$dest"
         chmod +x "$dest"
     done
