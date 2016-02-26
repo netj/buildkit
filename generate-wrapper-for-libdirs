@@ -16,18 +16,16 @@ rm -f "$Wrapper"
 {
     case $DEPENDS_TARGET_UNAME in
         Darwin) # OS X
-            echo '#!/usr/bin/env bash'
-            echo 'set -eu'
+            echo '#!/bin/sh -eu'
             echo 'here=${0%/*} name=${0##*/}'
             IFS=: eval 'echo "export DYLD_LIBRARY_PATH=${*/#/\"\$here\"/}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"'
             ;;
 
         *) # Linux and other Unixes
-            echo '#!/usr/bin/env bash'
-            echo 'set -eu'
+            echo '#!/bin/sh -eu'
             echo 'here=${0%/*} name=${0##*/}'
             IFS=: eval 'echo "export LD_LIBRARY_PATH=${*/#/\"\$here\"/}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"'
     esac
-    echo 'exec -a "$name" "$here"/'"$(sh-escape "$(relpath "${Wrapper%/*}"/. "$Target")")"' "$@"'
+    echo 'exec "$here"/'"$(sh-escape "$(relpath "${Wrapper%/*}"/. "$(dirname "$Target")")")"'/"$name" "$@"'
 } >"$Wrapper"
 chmod +x "$Wrapper"
