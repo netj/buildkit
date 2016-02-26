@@ -14,18 +14,35 @@ Target=$1; shift
 
 rm -f "$Wrapper"
 {
+    relpathToTargetDir=$(relpath "${Wrapper%/*}"/. "$(dirname "$Target")")
+    case $relpathToTargetDir in
+        .) # take special care when target is in the same directory
+            case $(basename "$Wrapper") in
+                bash) # try our best to provide a wrapper by giving up argv[0]
+                    # XXX otherwise the wrapper scripts go into an infinite exec loop
+                    echo >&2 "WARNING: a wrapper named 'bash' to a target in the same directory cannot preserve argv[0]"
+                    shebang='#!/bin/sh -eu'
+                    execCommand='exec "$here"/'"$(sh-escape "$(relpath "${Wrapper%/*}"/. "$Target")")"' "$@"'
+                    ;;
+                *) # use bash extension to preserve argv[0]
+                    shebang='#!/usr/bin/env bash'$'\n''set -eu'
+                    execCommand='exec -a "$name" "$here"/'"$(sh-escape "$(relpath "${Wrapper%/*}"/. "$Target")")"' "$@"'
+            esac
+            ;;
+        *) # otherwise, we can just rely on /bin/sh's standard exec
+            shebang='#!/bin/sh -eu'
+            execCommand='exec "$here"/'"$(sh-escape "$relpathToTargetDir")"'/"$name" "$@"'
+    esac
+    echo "$shebang"
+    echo 'here=${0%/*} name=${0##*/}'
     case $DEPENDS_TARGET_UNAME in
         Darwin) # OS X
-            echo '#!/bin/sh -eu'
-            echo 'here=${0%/*} name=${0##*/}'
             IFS=: eval 'echo "export DYLD_LIBRARY_PATH=${*/#/\"\$here\"/}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"'
             ;;
 
         *) # Linux and other Unixes
-            echo '#!/bin/sh -eu'
-            echo 'here=${0%/*} name=${0##*/}'
             IFS=: eval 'echo "export LD_LIBRARY_PATH=${*/#/\"\$here\"/}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"'
     esac
-    echo 'exec "$here"/'"$(sh-escape "$(relpath "${Wrapper%/*}"/. "$(dirname "$Target")")")"'/"$name" "$@"'
+    echo "$execCommand"
 } >"$Wrapper"
 chmod +x "$Wrapper"
