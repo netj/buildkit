@@ -14,6 +14,7 @@ md5sum=$md5sum
 custom-configure() {
     default-configure \
         --enable-silent-rules \
+        --disable-debug \
         --disable-dependency-tracking \
         --enable-fast-install \
         --without-x \
@@ -26,3 +27,27 @@ custom-install() {
     make install-exec
 }
 END
+
+# XXX GraphViz plugin system works based on a config file whose absolute path is hardcoded at build time.
+# To make it relocatable, we need to set the GVBINDIR environment, hence the following workaround.
+# See: http://www.graphviz.org/content/can-dot-be-run-without-system-wide-installation
+# See: http://www.graphviz.org/doc/info/command.html#d:GVBINDIR
+shim=.GVBINDIR-shim
+if ! [[ -x prefix/bin/"$shim" ]]; then
+    mv -vf prefix/bin prefix/bin.actual
+    mkdir -vp prefix/bin
+    ( cd prefix/bin
+    {
+        echo '#!/bin/sh -e'
+        echo 'here=`dirname "$0"`; here=`cd "$here" && pwd`'
+        echo 'export GVBINDIR="$here"/../lib/graphviz'
+        echo 'exec "$here/../bin.actual/${0##*/}" "$@"'
+    } >"$shim"
+    chmod -v +x "$shim"
+    )
+    ( cd prefix/bin.actual
+    for x in *; do
+        ln -sfnv "$shim" ../bin/"$x"
+    done
+    )
+fi
