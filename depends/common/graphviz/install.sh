@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -eu
 
+: ${DEPENDS_TARGET_UNAME:=$(uname)}
+
 name=graphviz
 version=2.38.0
 sha1sum=053c771278909160916ca5464a0a98ebf034c6ef
@@ -41,6 +43,13 @@ if ! [[ -x prefix/bin/"$shim" ]]; then
         echo '#!/bin/sh -e'
         echo 'here=`dirname "$0"`; here=`cd "$here" && pwd`'
         echo 'export GVBINDIR="$here"/../lib/graphviz'
+        case $DEPENDS_TARGET_UNAME in
+            Darwin) # OS X needs special care: https://gist.github.com/netj/d22146213111abcd386a
+            # since DYLD_* vars seem to be dropped upon every exec, we need to
+            # bring them back before hitting the executable binary
+            echo 'export DYLD_LIBRARY_PATH="${_DYLD_LIBRARY_PATH:-}"'
+            ;;
+        esac
         echo 'exec "$here/../bin.actual/${0##*/}" "$@"'
     } >"$shim"
     chmod -v +x "$shim"

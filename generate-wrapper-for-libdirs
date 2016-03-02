@@ -38,6 +38,9 @@ rm -f "$Wrapper"
     case $DEPENDS_TARGET_UNAME in
         Darwin) # OS X
             IFS=: eval 'echo "export DYLD_LIBRARY_PATH=${*/#/\"\$here\"/}\${DYLD_LIBRARY_PATH:+:\$DYLD_LIBRARY_PATH}"'
+            # DYLD_* vars are dropped: https://gist.github.com/netj/d22146213111abcd386a
+            # so keep a copy with a different name for any intermediate scripts that further want to tweak the environment before hitting the executable binary
+            echo 'export _DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH"  # XXX workaround for https://gist.github.com/netj/d22146213111abcd386a'
             ;;
 
         *) # Linux and other Unixes
