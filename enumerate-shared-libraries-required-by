@@ -17,6 +17,8 @@ case $(uname) in
         # exclude some standard/non-portable system libraries
         grep -vf <(printf '%s\.so\n' \
             'ld-linux.*' \
+            # linux-vdso appear on some distros (See: https://github.com/HazyResearch/deepdive/issues/528 and http://stackoverflow.com/q/26266641)
+            'linux-vdso' \
             lib{c,m,gcc_s,stdc++,pthread,dl,rt} \
             #
         ) |
