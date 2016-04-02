@@ -2,31 +2,33 @@
 set -eu
 shopt -s extglob
 
+dependsdir=$PWD
+
 mkdir -p .build
 cd .build
 
 # compile a runtime dependency checker
-mkdir -p ../runtime runtime
-rsync -rlH ../runtime/ --exclude=*.{commands,paths,test.sh,sh,txt} runtime/ --delete
-generate-depends-checker ../runtime "Missing dependency: " "$PACKAGENAME " >runtime/.check
+mkdir -p "$dependsdir"/runtime runtime
+rsync -rlH "$dependsdir"/runtime/ --exclude=*.{commands,paths,test.sh,sh,txt} runtime/ --delete
+generate-depends-checker "$dependsdir"/runtime "Missing dependency: " "$PACKAGENAME " >runtime/.check
 chmod +x runtime/.check
 
 # prepare dependencies to be bundled
 bundledir=bundled
 prepdir=bundled.prep
 prepdirpath="$(pwd -P)"/"$prepdir"
-mkdir -p ../bundled "$bundledir" "$prepdir"/.all
+mkdir -p "$dependsdir"/bundled "$bundledir" "$prepdir"/.all
 # analyze a signature of each dependency's recipe
-without-comments ../bundle.conf |
+without-comments "$dependsdir"/bundle.conf |
 while read -r dep; do
     # use git-hash-object(1) to build a signature of the recipe for bundling the dependency
     mkdir -p "$prepdir"/"$dep"
-    find -L ../bundled/"$dep" -type f | git hash-object --stdin-paths |
+    find -L "$dependsdir"/bundled/"$dep" -type f | git hash-object --stdin-paths |
     git hash-object --stdin >"$prepdir"/"$dep"/signature
 done
 # prepare the scripts
-rsync -rlH ../bundled/ --exclude=/*/{commands,paths,{test,bundle,install}.sh} "$prepdir"/ --copy-unsafe-links #--delete
-without-comments ../bundle.conf |
+rsync -rlH "$dependsdir"/bundled/ --exclude=/*/{commands,paths,{test,bundle,install}.sh} "$prepdir"/ --copy-unsafe-links #--delete
+without-comments "$dependsdir"/bundle.conf |
 while read -r dep; do
     prepared="$prepdir/$dep"
     rm -f "$prepared"/{test,install}.sh
@@ -41,10 +43,10 @@ while read -r dep; do
     {
         sh-escape echo "# Building dependency $dep ($signature)"
         # first, use the install script for building the dependency
-        cat ../bundled/"$dep"/install.sh
+        cat "$dependsdir"/bundled/"$dep"/install.sh
         # then, add how to bundle only the necessary files from what's built
         pathFromPrepToBundle="$(relpath "$prepdir/$dep" "$bundledir/$dep")/"
-        bundle=../bundled/"$dep"/bundle.sh
+        bundle="$dependsdir"/bundled/"$dep"/bundle.sh
         if [ -x "$bundle" ]; then
             sh-escape echo "# Using custom bundling rule for dependency $dep"
             ln -sfn "$bundle" .
