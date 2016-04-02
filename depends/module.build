@@ -36,7 +36,7 @@ while read -r dep; do
     {
         echo '
         prepared="$DEPENDSDIR/'"$dep"'"
-        [ -d "$prepared" -a x"$(cat "$prepared"/.prepared)" = x"'"$signature"'" ]
+        [ -d "$prepared" -a x"$(cat "$prepared"/.prepared 2>/dev/null)" = x"'"$signature"'" ]
         '
     } >"$prepared"/test.sh
     chmod +x "$prepared"/test.sh

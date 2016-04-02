@@ -84,7 +84,7 @@ fileOK() {
     $fileOK
 }
 fileOK ||
-    { cp -f "$cached" "$File"                                 && fileOK; } ||
+    { [[ -e "$cached" ]] && cp -f "$cached" "$File"                  && fileOK; } ||
     { curl --continue-at - --location --fail --output "$File" "$URL" && fileOK; } ||
     { curl --location --fail --output "$File" "$URL"                 && fileOK; } ||
     { wget --continue --output-document="$File" "$URL"        && fileOK; } ||
