@@ -5,13 +5,15 @@ set -eu
 
 name=graphviz
 # development snapshot
-version=2.39.20160517.2040
+version=6c031c5448f937fddf47c8407d8bf767dd0643d5 # ~= 2.39.20160517.2040
 
 fetch-configure-build-install $name-$version <<END
-url=http://graphviz.org/pub/graphviz/development/SOURCES/graphviz-${version}.tar.gz
-md5sum=\$url.md5
+url=https://github.com/ellson/graphviz/archive/${version}.tar.gz
+sha1sum=
+md5sum=
 
 custom-configure() {
+    ./autogen.sh
     default-configure \
         --enable-silent-rules \
         --disable-debug \
