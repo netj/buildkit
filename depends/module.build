@@ -27,6 +27,7 @@ while read -r dep; do
     git hash-object --stdin >"$prepdir"/"$dep"/signature
 done
 # prepare the scripts
+rm -f "$prepdir"/*/{commands,paths,test.sh}  # clear any stale dependency from the way
 rsync -rlH "$dependsdir"/bundled/ --exclude=/*/{commands,paths,{test,bundle,install}.sh} "$prepdir"/ --copy-unsafe-links #--delete
 without-comments "$dependsdir"/bundle.conf |
 while read -r dep; do
