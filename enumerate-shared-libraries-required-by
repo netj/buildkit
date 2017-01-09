@@ -18,7 +18,7 @@ case $(uname) in
         # NOTE linux-vdso appear on some distros (See: https://github.com/HazyResearch/deepdive/issues/528 and http://stackoverflow.com/q/26266641)
         grep -vf <(printf '%s\.so\n' \
             'ld-linux.*' \
-            'linux-.*' \
+            'linux-vdso.*' \
             lib{c,m,gcc_s,stdc++,pthread,dl,rt} \
             #
         ) |

@@ -15,6 +15,9 @@ md5sum=
 custom-configure() {
     ./autogen.sh
     default-configure \
+        --enable-static \
+        --disable-shared \
+        --disable-ltdl \
         --enable-silent-rules \
         --disable-debug \
         --disable-dependency-tracking \
@@ -27,6 +30,11 @@ custom-configure() {
 custom-install() {
     # don't install docs and data, just the executable binaries
     make install-exec
+
+    # rename *_static
+    for exe_static in "\$prefix"/bin/*_static
+    do mv -vf "\$exe_static" "\${exe_static%_static}"
+    done
 }
 END
 
