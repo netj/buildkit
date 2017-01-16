@@ -33,6 +33,11 @@ rm -f "$Wrapper"
             shebang='#!/bin/sh -eu'
             execCommand='exec "$here"/'"$(sh-escape "$relpathToTargetDir")"'/"$name" "$@"'
     esac
+    # find relative paths to given libdirs from the wrapper
+    relPathToLibDirs=()
+    while [[ $# -gt 0 ]]; do relPathToLibDirs+=("$(relpath "$Wrapper" "$1")"); shift; done
+    set -- "${relPathToLibDirs[@]}"
+    # generate wrapper script
     echo "$shebang"
     echo 'here=${0%/*} name=${0##*/}'
     case $DEPENDS_TARGET_UNAME in
