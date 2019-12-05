@@ -3,7 +3,7 @@ set -eu
 
 : ${DEPENDS_TARGET_UNAME:=$(uname)}
 
-name=graphviz
+name=MOTHBALLED-graphviz
 # development snapshot
 version=6c031c5448f937fddf47c8407d8bf767dd0643d5 # ~= 2.39.20160517.2040
 
